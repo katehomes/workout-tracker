@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: ./server
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./server:/app
+    depends_on:
+      - mongo
+
+  frontend:
+    build: ./client
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client:/app
+      - /app/node_modules # prevent overwriting node_modules from host
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    command: npm start
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
