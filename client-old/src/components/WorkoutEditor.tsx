@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { getWorkout } from '../api/workouts';
 import { updateWorkout } from '../api/workouts';
 
-import type { Workout, WorkoutSet, Exercise } from '../types/types';
+import { Workout, WorkoutSet, Exercise } from '../types/types';
 
 const WorkoutEditor = () => {
   const { id } = useParams<{ id: string }>();

@@ -1,11 +1,11 @@
 
 import './index.css';
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import WorkoutList from "./components/WorkoutList";
 import WorkoutEditor from "./components/WorkoutEditor";
 
 const App = () => {
-  console.log("App mounted");
   return (
     <Router>
       <Routes>

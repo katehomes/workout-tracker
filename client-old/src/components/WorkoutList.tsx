@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import type { Workout } from "../types/types";
+import { Workout } from "../types/types";
 import { getWorkouts } from "../api/workouts";
 import { Link } from "react-router-dom";
 
@@ -42,7 +42,7 @@ const WorkoutList: React.FC = () => {
             <button className="text-red-500 hover:underline">Delete</button>
           </div>
         </div>
-      ))}  
+      ))}x  
     </div>
   );
 };
