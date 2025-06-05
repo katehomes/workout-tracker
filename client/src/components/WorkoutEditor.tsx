@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useParams } from 'react-router-dom';
 import { getWorkout } from '../api/workouts';
-import { updateWorkout } from '../api/workouts';
+import { createWorkout, updateWorkout } from '../api/workouts';
 
 import type { Workout, WorkoutSet, Exercise } from '../types/types';
 
@@ -86,10 +86,12 @@ const WorkoutEditor = () => {
 
       if (id) {
         await updateWorkout(id, workoutToSave);
-        setSaveMessage('Workout updated successfully!');
-        setTimeout(() => setSaveMessage(null), 3000); // Clear message after 3s
+        setSaveMessage('✅ Workout updated!');
+        setTimeout(() => navigate('/workouts'), 2000);
       } else {
-        console.warn('No ID provided – cannot save.');
+        const created = await createWorkout(workoutToSave);
+        setSaveMessage('✅ Workout created!');
+        setTimeout(() => navigate(`/workouts/edit/${created._id}`), 1500);
       }
     } catch (err) {
       console.error('Failed to save workout:', err);
@@ -97,6 +99,13 @@ const WorkoutEditor = () => {
       setTimeout(() => setSaveMessage(null), 5000); // Clear error message slower
     }
   };
+
+  const removeExercise = (setIndex: number, exIndex: number) => {
+    const newSets = [...sets];
+    newSets[setIndex].exercises.splice(exIndex, 1);
+    setSets(newSets);
+  };
+
 
 
 
@@ -124,7 +133,7 @@ const WorkoutEditor = () => {
         </div>
       )}
 
-      <h2 className="text-xl font-bold">Edit Workout</h2>
+      <h2 className="text-xl font-bold">{id ? 'Edit Workout' : 'Create Workout'}</h2>
 
       <input
         type="text"
@@ -167,44 +176,50 @@ const WorkoutEditor = () => {
 
             <h4 className="font-semibold">Exercises</h4>
             {set.exercises.map((ex, exIndex) => (
-              <div key={exIndex} className="mb-4 bg-white p-3 rounded shadow space-y-2">
-                <div>
-                  <label className="w-32 font-semibold text-sm">Title: </label>
-                  <input
-                    type="text"
-                    className="input input-bordered flex-1"
-                    value={ex.title}
-                    onChange={(e) =>
-                      handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
-                    }
-                    placeholder="e.g., Jumping Jacks"
-                  />
-                </div>
-                <div>
-                  <label className="w-32 font-semibold text-sm">Duration (s): </label>
-                  <input
-                    type="number"
-                    className="input input-bordered w-auto max-w-[80px]"
-                    placeholder="e.g., 30"
-                    value={ex.duration}
-                    onChange={(e) =>
-                      handleExerciseChange(setIndex, exIndex, 'duration', parseInt(e.target.value))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="w-32 font-semibold text-sm">Instructions: </label>
-                  <input
-                    type="text"
-                    className="input input-bordered flex-1"
-                    value={ex.instructions || ''}
-                    onChange={(e) =>
-                      handleExerciseChange(setIndex, exIndex, 'instructions', e.target.value)
-                    }
-                    placeholder="e.g., Keep back straight"
-                  />
-                </div>
+              <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
+              <button
+                onClick={() => removeExercise(setIndex, exIndex)}
+                className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg"
+                title="Remove Exercise"
+              >×</button>
+              <div>
+                <label className="w-32 font-semibold text-sm">Title: </label>
+                <input
+                  type="text"
+                  className="input input-bordered flex-1"
+                  value={ex.title}
+                  onChange={(e) =>
+                    handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
+                  }
+                  placeholder="e.g., Jumping Jacks"
+                />
               </div>
+              <div>
+                <label className="w-32 font-semibold text-sm">Duration (s): </label>
+                <input
+                  type="number"
+                  className="input input-bordered w-auto max-w-[80px]"
+                  placeholder="e.g., 30"
+                  value={ex.duration}
+                  onChange={(e) =>
+                    handleExerciseChange(setIndex, exIndex, 'duration', parseInt(e.target.value))
+                  }
+                />
+              </div>
+              <div>
+                <label className="w-32 font-semibold text-sm">Instructions: </label>
+                <input
+                  type="text"
+                  className="input input-bordered flex-1"
+                  value={ex.instructions || ''}
+                  onChange={(e) =>
+                    handleExerciseChange(setIndex, exIndex, 'instructions', e.target.value)
+                  }
+                  placeholder="e.g., Keep back straight"
+                />
+              </div>
+            </div>
+
             ))}
 
             <button
