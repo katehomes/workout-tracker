@@ -14,7 +14,9 @@ import {
   useSensor,
   useSensors,
   KeyboardSensor,
-  type DragEndEvent
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent
 } from '@dnd-kit/core';
 
 import {
@@ -57,6 +59,10 @@ const WorkoutEditor = () => {
   const [tags, setTags] = useState('');
   const [sets, setSets] = useState<WorkoutSet[]>([]);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
+  const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
+
+
 
   const navigate = useNavigate();
 
@@ -155,18 +161,32 @@ const WorkoutEditor = () => {
     })
   );
 
+  const handleDragStart = (event: DragStartEvent, setIndex: number) => {
+    const { active } = event;
+    const index = sets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
+    if (index !== -1) {
+      setActiveExercise(sets[setIndex].exercises[index]);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent, setIndex: number) => {
     const { active, over } = event;
+    setActiveExercise(null);
+
     if (!over || active.id === over.id) return;
 
-    const newSets = [...sets];
-    const oldIndex = newSets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
-    const newIndex = newSets[setIndex].exercises.findIndex((_, i) => i.toString() === over.id);
+    const oldIndex = sets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
+    const newIndex = sets[setIndex].exercises.findIndex((_, i) => i.toString() === over.id);
 
+    const newSets = [...sets];
     newSets[setIndex].exercises = arrayMove(newSets[setIndex].exercises, oldIndex, newIndex);
     setSets(newSets);
   };
 
+  const toggleEdit = (setIndex: number, exIndex: number) => {
+  const key = `${setIndex}-${exIndex}`;
+  setEditingMap(prev => ({ ...prev, [key]: !prev[key] }));
+};
 
 
   return (
@@ -238,68 +258,102 @@ const WorkoutEditor = () => {
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
+              onDragStart={(e) => handleDragStart(e, setIndex)}
               onDragEnd={(event) => handleDragEnd(event, setIndex)}
             >
               <SortableContext items={set.exercises.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
                 {set.exercises.map((ex, exIndex) => (
                   <SortableExercise key={exIndex.toString()} id={exIndex.toString()}>
-                  {({ attributes, listeners }) => (
-                  <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
-                    <button
-                      {...attributes}
-                      {...listeners}
-                      // className="absolute top-2 left-2 text-gray-400 hover:text-gray-600 cursor-grab"
-                      className="cursor-grab text-gray-500 hover:text-gray-700 text-xl"
-                      title="Drag To Reorder"
-                    >
-                      ☰
-                    </button>
-                    <button
-                      onClick={() => removeExercise(setIndex, exIndex)}
-                      className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg"
-                      title="Remove Exercise"
-                    >×</button>
-                    <div>
-                      <label className="w-32 font-semibold text-sm">Title: </label>
-                      <input
-                        type="text"
-                        className="input input-bordered flex-1"
-                        value={ex.title}
-                        onChange={(e) =>
-                          handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
-                        }
-                        placeholder="e.g., Jumping Jacks"
-                      />
+                  {({ attributes, listeners }) => {
+                    const key = `${setIndex}-${exIndex}`;
+                    const isEditing = editingMap[key] || false;
+                    return (
+                      <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
+                        <button
+                          {...attributes}
+                          {...listeners}
+                          className="cursor-grab text-gray-500 hover:text-gray-700 text-xl"
+                          title="Drag To Reorder"
+                        >
+                          ☰
+                        </button>
+                        <button
+                          onClick={() => removeExercise(setIndex, exIndex)}
+                          className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg"
+                          title="Remove Exercise"
+                        >×</button>
+                        <button
+                          onClick={() => toggleEdit(setIndex, exIndex)}
+                          className="absolute top-2 right-8 text-blue-500 text-sm hover:underline"
+                          title={!isEditing ? "Edit Excersize" : "Save Excersize" }
+                        >{!isEditing ? "Edit" : "Save" }</button>
+                      
+
+                        {!isEditing ? (
+                          <>
+                            <div className="font-semibold">{ex.title || 'Untitled Exercise'}</div>
+                            <div className="flex justify-between items-center gap-2 text-xs text-gray-500">
+                              <span>{ex.duration}s</span>
+                              {ex.instructions && (
+                                <span className="truncate max-w-[200px]" title={ex.instructions}>
+                                  {ex.instructions}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <label className="w-32 font-semibold text-sm">Title: </label>
+                              <input
+                                type="text"
+                                className="input input-bordered flex-1"
+                                value={ex.title}
+                                onChange={(e) =>
+                                  handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
+                                }
+                                placeholder="e.g., Jumping Jacks"
+                              />
+                            </div>
+                            <div>
+                              <label className="w-32 font-semibold text-sm">Duration (s): </label>
+                              <input
+                                type="number"
+                                className="input input-bordered w-auto max-w-[80px]"
+                                placeholder="e.g., 30"
+                                value={ex.duration}
+                                onChange={(e) =>
+                                  handleExerciseChange(setIndex, exIndex, 'duration', parseInt(e.target.value))
+                                }
+                              />
+                            </div>
+                            <div>
+                              <label className="w-32 font-semibold text-sm">Instructions: </label>
+                              <input
+                                type="text"
+                                className="input input-bordered flex-1"
+                                value={ex.instructions || ''}
+                                onChange={(e) =>
+                                  handleExerciseChange(setIndex, exIndex, 'instructions', e.target.value)
+                                }
+                                placeholder="e.g., Keep back straight"
+                              />
+                            </div>
+                          </>
+                        )}
                     </div>
-                    <div>
-                      <label className="w-32 font-semibold text-sm">Duration (s): </label>
-                      <input
-                        type="number"
-                        className="input input-bordered w-auto max-w-[80px]"
-                        placeholder="e.g., 30"
-                        value={ex.duration}
-                        onChange={(e) =>
-                          handleExerciseChange(setIndex, exIndex, 'duration', parseInt(e.target.value))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label className="w-32 font-semibold text-sm">Instructions: </label>
-                      <input
-                        type="text"
-                        className="input input-bordered flex-1"
-                        value={ex.instructions || ''}
-                        onChange={(e) =>
-                          handleExerciseChange(setIndex, exIndex, 'instructions', e.target.value)
-                        }
-                        placeholder="e.g., Keep back straight"
-                      />
-                    </div>
-                  </div>
-                  )}
+                  )}}
                   </SortableExercise>
                 ))}
               </SortableContext>
+              <DragOverlay>
+                {activeExercise ? (
+                  <div className="bg-white p-3 rounded shadow w-[280px] opacity-80">
+                    <div className="font-semibold">{activeExercise.title || 'Untitled Exercise'}</div>
+                    <div className="text-xs text-gray-500">{activeExercise.duration}s</div>
+                  </div>
+                ) : null}
+              </DragOverlay>
             </DndContext>
             <button
               onClick={() => addExercise(setIndex)}
