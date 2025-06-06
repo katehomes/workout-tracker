@@ -27,8 +27,15 @@ import {
 
 import { CSS } from '@dnd-kit/utilities';
 
-const SortableExercise = ({ id, children }: { id: string; children: React.ReactNode }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+const SortableExercise = ({
+  id,
+  children,
+}: {
+  id: string;
+  children: (props: ReturnType<typeof useSortable>) => React.ReactNode;
+}) => {
+  const sortable = useSortable({ id });
+  const { setNodeRef, transform, transition } = sortable;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -36,11 +43,12 @@ const SortableExercise = ({ id, children }: { id: string; children: React.ReactN
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
+    <div ref={setNodeRef} style={style}>
+      {children(sortable)}
     </div>
   );
 };
+
 
 
 const WorkoutEditor = () => {
@@ -235,7 +243,17 @@ const WorkoutEditor = () => {
               <SortableContext items={set.exercises.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
                 {set.exercises.map((ex, exIndex) => (
                   <SortableExercise key={exIndex.toString()} id={exIndex.toString()}>
-                    <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
+                  {({ attributes, listeners }) => (
+                  <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
+                    <button
+                      {...attributes}
+                      {...listeners}
+                      // className="absolute top-2 left-2 text-gray-400 hover:text-gray-600 cursor-grab"
+                      className="cursor-grab text-gray-500 hover:text-gray-700 text-xl"
+                      title="Drag To Reorder"
+                    >
+                      ☰
+                    </button>
                     <button
                       onClick={() => removeExercise(setIndex, exIndex)}
                       className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg"
@@ -278,6 +296,7 @@ const WorkoutEditor = () => {
                       />
                     </div>
                   </div>
+                  )}
                   </SortableExercise>
                 ))}
               </SortableContext>
