@@ -1,378 +1,497 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+  import React, { useState, useEffect } from 'react';
+  import { useNavigate } from 'react-router-dom';
 
-import { useParams } from 'react-router-dom';
-import { getWorkout } from '../api/workouts';
-import { createWorkout, updateWorkout } from '../api/workouts';
+  import { useParams } from 'react-router-dom';
+  import { getWorkout } from '../api/workouts';
+  import { createWorkout, updateWorkout } from '../api/workouts';
 
-import type { Workout, WorkoutSet, Exercise } from '../types/types';
+  import type { Workout, WorkoutSet, Exercise } from '../types/types';
 
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  KeyboardSensor,
-  type DragEndEvent,
-  DragOverlay,
-  type DragStartEvent
-} from '@dnd-kit/core';
+  import { MdOutlineDeleteForever } from "react-icons/md";
 
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
+  import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    KeyboardSensor,
+    type DragEndEvent,
+    DragOverlay,
+    type DragStartEvent
+  } from '@dnd-kit/core';
 
-import { CSS } from '@dnd-kit/utilities';
+  import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy
+  } from '@dnd-kit/sortable';
 
-const SortableExercise = ({
-  id,
-  children,
-}: {
-  id: string;
-  children: (props: ReturnType<typeof useSortable>) => React.ReactNode;
-}) => {
-  const sortable = useSortable({ id });
-  const { setNodeRef, transform, transition } = sortable;
+  import { CSS } from '@dnd-kit/utilities';
+
+  const SortableExercise = ({
+    id,
+    children,
+  }: {
+    id: string;
+    children: (props: ReturnType<typeof useSortable>) => React.ReactNode;
+  }) => {
+    const sortable = useSortable({ id });
+    const { setNodeRef, transform, transition } = sortable;
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+
+    return (
+      <div ref={setNodeRef} style={style}>
+        {children(sortable)}
+      </div>
+    );
+  };
+
+  const SortableOrderItem = ({ id, children }: { id: number; children: React.ReactNode }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
-      {children(sortable)}
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
     </div>
   );
 };
 
+  const WorkoutEditor = () => {
+    const { id } = useParams<{ id: string }>();
+    const [title, setTitle] = useState('');
+    const [tags, setTags] = useState('');
+    const [sets, setSets] = useState<WorkoutSet[]>([]);
+    const [saveMessage, setSaveMessage] = useState<string | null>(null);
+    const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
+    const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
+    const [setOrder, setSetOrder] = useState<number[]>([]);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      if (!id) return;
+      getWorkout(id)
+        .then((data) => {
+          setTitle(data.title);
+          setTags(data.tags?.join(', ') ?? '');
+          setSets(data.sets || []);
+        })
+        .catch((err) => console.error('Failed to load workout:', err));
+    }, [id]);
+
+      useEffect(() => {
+      if (!id) return;
+      getWorkout(id)
+        .then((data) => {
+          setTitle(data.title);
+          setTags(data.tags?.join(', ') ?? '');
+          setSets(data.sets || []);
+          setSetOrder(data.setOrder || data.sets.map((_, i) => i));
+        })
+        .catch(console.error);
+    }, [id]);
 
 
-const WorkoutEditor = () => {
-  const { id } = useParams<{ id: string }>();
-  const [title, setTitle] = useState('');
-  const [tags, setTags] = useState('');
-  const [sets, setSets] = useState<WorkoutSet[]>([]);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
-  const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
-
-
-
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!id) return;
-    getWorkout(id)
-      .then((data) => {
-        setTitle(data.title);
-        setTags(data.tags?.join(', ') ?? '');
-        setSets(data.sets || []);
-      })
-      .catch((err) => console.error('Failed to load workout:', err));
-  }, [id]);
-
-  const handleSetChange = <K extends keyof WorkoutSet>(
-    index: number,
-    field: K,
-    value: WorkoutSet[K]
-  ) => {
-    const newSets = [...sets];
-    newSets[index][field] = value;
-    setSets(newSets);
-  };
-
-  const handleExerciseChange = <K extends keyof Exercise>(
-    setIndex: number,
-    exIndex: number,
-    field: K,
-    value: Exercise[K]
-  ) => {
-    const newSets = [...sets];
-    newSets[setIndex].exercises[exIndex][field] = value;
-    setSets(newSets);
-  };
-
-  const addSet = () => {
-    const newSet: WorkoutSet = {
-      repeat: 1,
-      order: sets.length,
-      exercises: [],
+    const handleSetChange = <K extends keyof WorkoutSet>(
+      index: number,
+      field: K,
+      value: WorkoutSet[K]
+    ) => {
+      const newSets = [...sets];
+      newSets[index][field] = value;
+      setSets(newSets);
     };
-    setSets([...sets, newSet]);
-  };
 
-  const addExercise = (setIndex: number) => {
-    const newSets = [...sets];
-    newSets[setIndex].exercises.push({
-      title: '',
-      duration: 0,
-      order: newSets[setIndex].exercises.length,
-    });
-    setSets(newSets);
-  };
+    const handleExerciseChange = <K extends keyof Exercise>(
+      setIndex: number,
+      exIndex: number,
+      field: K,
+      value: Exercise[K]
+    ) => {
+      const newSets = [...sets];
+      newSets[setIndex].exercises[exIndex][field] = value;
+      setSets(newSets);
+    };
 
-  const setSummary = sets
-  .map((set, i) => {
-    const label = set.title?.trim() ? set.title : `Set ${i + 1}`;
-    return set.repeat && set.repeat > 1 ? `${label} (x${set.repeat})` : label;
-  })
-  .join(' -> ');
+    const addSet = () => {
+      const newSet = { title: '', order: sets.length, exercises: [] };
+      setSets([...sets, newSet]);
+      setSetOrder([...setOrder, sets.length]);
+    };
 
-  const handleSave = async () => {
-    try {
-      const workoutToSave = {
-        title,
-        tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        sets,
-      };
+    const addExercise = (setIndex: number) => {
+      const newSets = [...sets];
+      newSets[setIndex].exercises.push({
+        title: '',
+        duration: 0,
+        order: newSets[setIndex].exercises.length,
+      });
+      setSets(newSets);
+    };
 
-      if (id) {
-        await updateWorkout(id, workoutToSave);
-        setSaveMessage('✅ Workout updated!');
-        setTimeout(() => navigate('/workouts'), 2000);
-      } else {
-        const created = await createWorkout(workoutToSave);
-        setSaveMessage('✅ Workout created!');
-        setTimeout(() => navigate(`/workouts/edit/${created._id}`), 1500);
+    const setSummary = (() => {
+      if (!sets.length || !setOrder.length) return '';
+
+      const chunks: { index: number; count: number }[] = [];
+
+      for (let i = 0; i < setOrder.length; i++) {
+        const index = setOrder[i];
+        if (chunks.length && chunks[chunks.length - 1].index === index) {
+          chunks[chunks.length - 1].count += 1;
+        } else {
+          chunks.push({ index, count: 1 });
+        }
       }
-    } catch (err) {
-      console.error('Failed to save workout:', err);
-      setSaveMessage('❌ Error saving workout.');
-      setTimeout(() => setSaveMessage(null), 5000); // Clear error message slower
-    }
+
+      return chunks
+        .map(({ index, count }) => {
+          const label = sets[index]?.title?.trim() || `Set ${index + 1}`;
+          return count > 1 ? `${label} (x${count})` : label;
+        })
+        .join(' → ');
+    })();
+
+    const handleSave = async () => {
+      try {
+        const workoutToSave = {
+          title,
+          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+          sets,
+          setOrder,
+        };
+
+
+        if (id) {
+          await updateWorkout(id, workoutToSave);
+          setSaveMessage('✅ Workout updated!');
+          setTimeout(() => navigate('/workouts'), 2000);
+        } else {
+          const created = await createWorkout(workoutToSave);
+          setSaveMessage('✅ Workout created!');
+          setTimeout(() => navigate(`/workouts/edit/${created._id}`), 1500);
+        }
+      } catch (err) {
+        console.error('Failed to save workout:', err);
+        setSaveMessage('❌ Error saving workout.');
+        setTimeout(() => setSaveMessage(null), 5000); // Clear error message slower
+      }
+    };
+
+    const removeExercise = (setIndex: number, exIndex: number) => {
+      const newSets = [...sets];
+      newSets[setIndex].exercises.splice(exIndex, 1);
+      setSets(newSets);
+    };
+
+    const sensors = useSensors(
+      useSensor(PointerSensor),
+      useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+      })
+    );
+
+    const handleDragStart = (event: DragStartEvent, setIndex: number) => {
+      const { active } = event;
+      const index = sets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
+      if (index !== -1) {
+        setActiveExercise(sets[setIndex].exercises[index]);
+      }
+    };
+
+    const handleDragEnd = (event: DragEndEvent, setIndex: number) => {
+      const { active, over } = event;
+      setActiveExercise(null);
+
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = sets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
+      const newIndex = sets[setIndex].exercises.findIndex((_, i) => i.toString() === over.id);
+
+      const newSets = [...sets];
+      newSets[setIndex].exercises = arrayMove(newSets[setIndex].exercises, oldIndex, newIndex);
+      setSets(newSets);
+    };
+
+    const toggleEdit = (setIndex: number, exIndex: number) => {
+    const key = `${setIndex}-${exIndex}`;
+    setEditingMap(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const removeExercise = (setIndex: number, exIndex: number) => {
-    const newSets = [...sets];
-    newSets[setIndex].exercises.splice(exIndex, 1);
-    setSets(newSets);
-  };
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+    return (
+      <div className="p-4 space-y-4">
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={() => navigate('/workouts')}
+            className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+          >
+            ← Back
+          </button>
 
-  const handleDragStart = (event: DragStartEvent, setIndex: number) => {
-    const { active } = event;
-    const index = sets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
-    if (index !== -1) {
-      setActiveExercise(sets[setIndex].exercises[index]);
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent, setIndex: number) => {
-    const { active, over } = event;
-    setActiveExercise(null);
-
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = sets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
-    const newIndex = sets[setIndex].exercises.findIndex((_, i) => i.toString() === over.id);
-
-    const newSets = [...sets];
-    newSets[setIndex].exercises = arrayMove(newSets[setIndex].exercises, oldIndex, newIndex);
-    setSets(newSets);
-  };
-
-  const toggleEdit = (setIndex: number, exIndex: number) => {
-  const key = `${setIndex}-${exIndex}`;
-  setEditingMap(prev => ({ ...prev, [key]: !prev[key] }));
-};
-
-
-  return (
-    <div className="p-4 space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <button
-          onClick={() => navigate('/workouts')}
-          className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
-        >
-          ← Back
-        </button>
-
-        <button
-          onClick={handleSave}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Save Workout
-        </button>
-      </div>
-
-      {saveMessage && (
-        <div className="text-sm text-green-700 bg-green-100 border border-green-300 rounded px-3 py-1 w-fit mb-2">
-          {saveMessage}
+          <button
+            onClick={handleSave}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Save Workout
+          </button>
         </div>
-      )}
 
-      <h2 className="text-xl font-bold">{id ? 'Edit Workout' : 'Create Workout'}</h2>
-
-      <input
-        type="text"
-        placeholder="Workout Title"
-        className="input input-bordered w-full"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-
-      <input
-        type="text"
-        placeholder="Tags (comma separated)"
-        className="input input-bordered w-full"
-        value={tags}
-        onChange={(e) => setTags(e.target.value)}
-      />
-
-      <div className="text-sm text-gray-600 italic">{setSummary}</div>
-
-      <div className="flex overflow-x-auto gap-4 pb-4">
-        {sets.map((set, setIndex) => (
-          <div key={setIndex} className="min-w-[300px] max-w-[auto] flex-shrink-0 border p-4 rounded bg-gray-100">
-            <input
-              type="text"
-              placeholder={`Title: Set ${setIndex + 1} (optional)`}
-              className="input input-bordered w-full mb-2"
-              value={set.title || ''}
-              onChange={(e) => handleSetChange(setIndex, 'title', e.target.value)}
-            />
-
-            <div className="mb-2">
-              <label className="font-semibold">Repeat</label>
-              <input
-                type="number"
-                className="input input-bordered ml-2 w-20"
-                value={set.repeat}
-                onChange={(e) => handleSetChange(setIndex, 'repeat', parseInt(e.target.value))}
-              />
-            </div>
-
-            <h4 className="font-semibold">Exercises</h4>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={(e) => handleDragStart(e, setIndex)}
-              onDragEnd={(event) => handleDragEnd(event, setIndex)}
-            >
-              <SortableContext items={set.exercises.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
-                {set.exercises.map((ex, exIndex) => (
-                  <SortableExercise key={exIndex.toString()} id={exIndex.toString()}>
-                  {({ attributes, listeners }) => {
-                    const key = `${setIndex}-${exIndex}`;
-                    const isEditing = editingMap[key] || false;
-                    return (
-                      <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
-                        <button
-                          {...attributes}
-                          {...listeners}
-                          className="cursor-grab text-gray-500 hover:text-gray-700 text-xl"
-                          title="Drag To Reorder"
-                        >
-                          ☰
-                        </button>
-                        <button
-                          onClick={() => removeExercise(setIndex, exIndex)}
-                          className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg"
-                          title="Remove Exercise"
-                        >×</button>
-                        <button
-                          onClick={() => toggleEdit(setIndex, exIndex)}
-                          className="absolute top-2 right-8 text-blue-500 text-sm hover:underline"
-                          title={!isEditing ? "Edit Excersize" : "Save Excersize" }
-                        >{!isEditing ? "Edit" : "Save" }</button>
-                      
-
-                        {!isEditing ? (
-                          <>
-                            <div className="font-semibold">{ex.title || 'Untitled Exercise'}</div>
-                            <div className="flex justify-between items-center gap-2 text-xs text-gray-500">
-                              <span>{ex.duration}s</span>
-                              {ex.instructions && (
-                                <span className="truncate max-w-[200px]" title={ex.instructions}>
-                                  {ex.instructions}
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div>
-                              <label className="w-32 font-semibold text-sm">Title: </label>
-                              <input
-                                type="text"
-                                className="input input-bordered flex-1"
-                                value={ex.title}
-                                onChange={(e) =>
-                                  handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
-                                }
-                                placeholder="e.g., Jumping Jacks"
-                              />
-                            </div>
-                            <div>
-                              <label className="w-32 font-semibold text-sm">Duration (s): </label>
-                              <input
-                                type="number"
-                                className="input input-bordered w-auto max-w-[80px]"
-                                placeholder="e.g., 30"
-                                value={ex.duration}
-                                onChange={(e) =>
-                                  handleExerciseChange(setIndex, exIndex, 'duration', parseInt(e.target.value))
-                                }
-                              />
-                            </div>
-                            <div>
-                              <label className="w-32 font-semibold text-sm">Instructions: </label>
-                              <input
-                                type="text"
-                                className="input input-bordered flex-1"
-                                value={ex.instructions || ''}
-                                onChange={(e) =>
-                                  handleExerciseChange(setIndex, exIndex, 'instructions', e.target.value)
-                                }
-                                placeholder="e.g., Keep back straight"
-                              />
-                            </div>
-                          </>
-                        )}
-                    </div>
-                  )}}
-                  </SortableExercise>
-                ))}
-              </SortableContext>
-              <DragOverlay>
-                {activeExercise ? (
-                  <div className="bg-white p-3 rounded shadow w-[280px] opacity-80">
-                    <div className="font-semibold">{activeExercise.title || 'Untitled Exercise'}</div>
-                    <div className="text-xs text-gray-500">{activeExercise.duration}s</div>
-                  </div>
-                ) : null}
-              </DragOverlay>
-            </DndContext>
-            <button
-              onClick={() => addExercise(setIndex)}
-              className="mt-2 text-sm text-blue-600 hover:underline"
-            >
-              + Add Exercise
-            </button>
+        {saveMessage && (
+          <div className="text-sm text-green-700 bg-green-100 border border-green-300 rounded px-3 py-1 w-fit mb-2">
+            {saveMessage}
           </div>
-        ))}
+        )}
+
+        <h2 className="text-xl font-bold">{id ? 'Edit Workout' : 'Create Workout'}</h2>
+
+        <input
+          type="text"
+          placeholder="Workout Title"
+          className="input input-bordered w-full"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+
+        <input
+          type="text"
+          placeholder="Tags (comma separated)"
+          className="input input-bordered w-full"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+        />
+
+        <div className="text-sm text-gray-600 italic">{setSummary}</div>
+
+        <div className="border rounded p-4 space-y-2 bg-gray-50 max-w-[250px]">
+          <h3 className="font-semibold text-lg">Set Order</h3>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={({ active, over }) => {
+              if (active.id !== over?.id) {
+                const oldIndex = setOrder.findIndex((id) => id === active.id);
+                const newIndex = setOrder.findIndex((id) => id === over?.id);
+                setSetOrder(arrayMove(setOrder, oldIndex, newIndex));
+              }
+            }}
+          >
+            <SortableContext items={setOrder} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2">
+                {setOrder.map((setIndex, orderIndex) => (
+                  <SortableOrderItem key={orderIndex} id={setIndex}>
+                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded shadow">
+                      <span className="font-medium">
+                        {sets[setIndex]?.title?.trim() || `Set ${setIndex + 1}`}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const newOrder = [...setOrder];
+                          newOrder.splice(orderIndex, 1);
+                          setSetOrder(newOrder);
+                        }}
+                        className="text-red-600 hover:underline text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </SortableOrderItem>
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+
+          {/* {setOrder.map((setIndex, orderIndex) => (
+            <div key={orderIndex} className="flex items-center justify-between bg-white px-3 py-2 rounded shadow">
+              <div>
+                <span className="font-medium">
+                  {sets[setIndex]?.title?.trim() || `Set ${setIndex + 1}`}
+                </span>
+              </div>
+              <div className="space-x-2">
+                <button
+                  onClick={() => {
+                    const newOrder = [...setOrder];
+                    newOrder.splice(orderIndex, 1);
+                    setSetOrder(newOrder);
+                  }}
+                  className="text-red-600 hover:underline text-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))} */}
+
+          <div className="mt-4">
+            <label className="block font-semibold mb-1">Add Set to Order</label>
+            <select
+              className="input input-bordered w-full"
+              onChange={(e) => {
+                const selected = parseInt(e.target.value);
+                if (!isNaN(selected)) setSetOrder([...setOrder, selected]);
+              }}
+            >
+              <option value="">Select a set...</option>
+              {sets.map((s, i) => (
+                <option key={i} value={i}>
+                  {s.title?.trim() || `Set ${i + 1}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+
+        <div className="flex overflow-x-auto gap-4 pb-4">
+          {sets.map((set, setIndex) => (
+            <div key={setIndex} className="min-w-[300px] max-w-[auto] flex-shrink-0 p-4 rounded shadow bg-gray-100">
+              <input
+                type="text"
+                placeholder={`Title: Set ${setIndex + 1} (optional)`}
+                className="input input-bordered w-full mb-2"
+                value={set.title || ''}
+                onChange={(e) => handleSetChange(setIndex, 'title', e.target.value)}
+              />
+
+              <h4 className="font-semibold">Exercises</h4>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={(e) => handleDragStart(e, setIndex)}
+                onDragEnd={(event) => handleDragEnd(event, setIndex)}
+              >
+                <SortableContext items={set.exercises.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
+                  {set.exercises.map((ex, exIndex) => (
+                    <SortableExercise key={exIndex.toString()} id={exIndex.toString()}>
+                    {({ attributes, listeners }) => {
+                      const key = `${setIndex}-${exIndex}`;
+                      const isEditing = editingMap[key] || false;
+                      return (
+                        <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
+                          <button
+                            {...attributes}
+                            {...listeners}
+                            className="cursor-grab text-gray-500 hover:text-gray-700 text-xl"
+                            title="Drag To Reorder"
+                          >
+                            ☰
+                          </button>
+                          <button
+                            onClick={() => removeExercise(setIndex, exIndex)}
+                            className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg"
+                            title="Remove Exercise"
+                          ><MdOutlineDeleteForever /></button>
+                          <button
+                            onClick={() => toggleEdit(setIndex, exIndex)}
+                            className="absolute top-2 right-8 text-blue-500 text-sm hover:underline"
+                            title={!isEditing ? "Edit Excersize" : "Save Excersize" }
+                          >{!isEditing ? "Edit" : "Save" }</button>
+                        
+
+                          {!isEditing ? (
+                            <>
+                              <div className="font-semibold">{ex.title || 'Untitled Exercise'}</div>
+                              <div className="flex justify-between items-center gap-2 text-xs text-gray-500">
+                                <span>{ex.duration}s</span>
+                                {ex.instructions && (
+                                  <span className="truncate max-w-[200px]" title={ex.instructions}>
+                                    {ex.instructions}
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <label className="w-32 font-semibold text-sm">Title: </label>
+                                <input
+                                  type="text"
+                                  className="input input-bordered flex-1"
+                                  value={ex.title}
+                                  onChange={(e) =>
+                                    handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
+                                  }
+                                  placeholder="e.g., Jumping Jacks"
+                                />
+                              </div>
+                              <div>
+                                <label className="w-32 font-semibold text-sm">Duration (s): </label>
+                                <input
+                                  type="number"
+                                  className="input input-bordered w-auto max-w-[80px]"
+                                  placeholder="e.g., 30"
+                                  value={ex.duration}
+                                  onChange={(e) =>
+                                    handleExerciseChange(setIndex, exIndex, 'duration', parseInt(e.target.value))
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label className="w-32 font-semibold text-sm">Instructions: </label>
+                                <input
+                                  type="text"
+                                  className="input input-bordered flex-1"
+                                  value={ex.instructions || ''}
+                                  onChange={(e) =>
+                                    handleExerciseChange(setIndex, exIndex, 'instructions', e.target.value)
+                                  }
+                                  placeholder="e.g., Keep back straight"
+                                />
+                              </div>
+                            </>
+                          )}
+                      </div>
+                    )}}
+                    </SortableExercise>
+                  ))}
+                </SortableContext>
+                <DragOverlay>
+                  {activeExercise ? (
+                    <div className="bg-white p-3 rounded shadow w-[280px] opacity-80">
+                      <div className="font-semibold">{activeExercise.title || 'Untitled Exercise'}</div>
+                      <div className="text-xs text-gray-500">{activeExercise.duration}s</div>
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+              <button
+                onClick={() => addExercise(setIndex)}
+                className="mt-2 text-sm text-blue-600 hover:underline"
+              >
+                + Add Exercise
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={addSet}
+          className="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          + Add WorkoutSet
+        </button>
       </div>
+    );
+  };
 
-      <button
-        onClick={addSet}
-        className="bg-green-500 text-white px-4 py-2 rounded"
-      >
-        + Add WorkoutSet
-      </button>
-    </div>
-  );
-};
-
-export default WorkoutEditor;
+  export default WorkoutEditor;

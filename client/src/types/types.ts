@@ -9,7 +9,6 @@ export interface Exercise {
 export interface WorkoutSet {
   title?: string;
   order: number;
-  repeat?: number;
   exercises: Exercise[];
 }
 
@@ -18,6 +17,7 @@ export interface Workout {
   title: string;
   tags?: string[];
   sets: WorkoutSet[];
+  setOrder: number[];
   createdAt?: string;
   updatedAt?: string;
 }

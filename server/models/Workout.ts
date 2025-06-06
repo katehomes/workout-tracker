@@ -10,7 +10,6 @@ export interface IExercise {
 
 export interface ISet {
   title?: string;
-  repeat?: number;
   exercises: IExercise[];
   order: number;
 }
@@ -19,6 +18,7 @@ export interface IWorkout extends mongoose.Document {
   title: string;
   tags: string[];
   sets: ISet[];
+  setOrder: number[];
   createdAt?: Date;
 }
 
@@ -32,7 +32,6 @@ const ExerciseSchema = new mongoose.Schema<IExercise>({
 
 const SetSchema = new mongoose.Schema<ISet>({
   title: { type: String },
-  repeat: { type: Number, default: 1 },
   exercises: [ExerciseSchema],
   order: { type: Number, required: true },
 });
@@ -41,6 +40,7 @@ const WorkoutSchema = new mongoose.Schema<IWorkout>({
   title: { type: String, required: true },
   tags: [String],
   sets: [SetSchema],
+  setOrder: { type: [Number], required: true },
   createdAt: { type: Date, default: Date.now },
 });
 

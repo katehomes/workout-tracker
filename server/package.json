@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only app.ts"
+    "dev": "ts-node-dev --respawn --transpile-only app.ts",
+    "migrate": "ts-node-dev scripts/migrate-workouts.ts"
   },
   "keywords": [],
   "author": "",
