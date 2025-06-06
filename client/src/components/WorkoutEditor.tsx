@@ -7,6 +7,42 @@ import { createWorkout, updateWorkout } from '../api/workouts';
 
 import type { Workout, WorkoutSet, Exercise } from '../types/types';
 
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  KeyboardSensor,
+  type DragEndEvent
+} from '@dnd-kit/core';
+
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+
+import { CSS } from '@dnd-kit/utilities';
+
+const SortableExercise = ({ id, children }: { id: string; children: React.ReactNode }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+};
+
+
 const WorkoutEditor = () => {
   const { id } = useParams<{ id: string }>();
   const [title, setTitle] = useState('');
@@ -15,8 +51,6 @@ const WorkoutEditor = () => {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const navigate = useNavigate();
-
-
 
   useEffect(() => {
     if (!id) return;
@@ -106,6 +140,24 @@ const WorkoutEditor = () => {
     setSets(newSets);
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent, setIndex: number) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const newSets = [...sets];
+    const oldIndex = newSets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
+    const newIndex = newSets[setIndex].exercises.findIndex((_, i) => i.toString() === over.id);
+
+    newSets[setIndex].exercises = arrayMove(newSets[setIndex].exercises, oldIndex, newIndex);
+    setSets(newSets);
+  };
 
 
 
@@ -175,53 +227,61 @@ const WorkoutEditor = () => {
             </div>
 
             <h4 className="font-semibold">Exercises</h4>
-            {set.exercises.map((ex, exIndex) => (
-              <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
-              <button
-                onClick={() => removeExercise(setIndex, exIndex)}
-                className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg"
-                title="Remove Exercise"
-              >×</button>
-              <div>
-                <label className="w-32 font-semibold text-sm">Title: </label>
-                <input
-                  type="text"
-                  className="input input-bordered flex-1"
-                  value={ex.title}
-                  onChange={(e) =>
-                    handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
-                  }
-                  placeholder="e.g., Jumping Jacks"
-                />
-              </div>
-              <div>
-                <label className="w-32 font-semibold text-sm">Duration (s): </label>
-                <input
-                  type="number"
-                  className="input input-bordered w-auto max-w-[80px]"
-                  placeholder="e.g., 30"
-                  value={ex.duration}
-                  onChange={(e) =>
-                    handleExerciseChange(setIndex, exIndex, 'duration', parseInt(e.target.value))
-                  }
-                />
-              </div>
-              <div>
-                <label className="w-32 font-semibold text-sm">Instructions: </label>
-                <input
-                  type="text"
-                  className="input input-bordered flex-1"
-                  value={ex.instructions || ''}
-                  onChange={(e) =>
-                    handleExerciseChange(setIndex, exIndex, 'instructions', e.target.value)
-                  }
-                  placeholder="e.g., Keep back straight"
-                />
-              </div>
-            </div>
-
-            ))}
-
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => handleDragEnd(event, setIndex)}
+            >
+              <SortableContext items={set.exercises.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
+                {set.exercises.map((ex, exIndex) => (
+                  <SortableExercise key={exIndex.toString()} id={exIndex.toString()}>
+                    <div key={exIndex} className="relative mb-4 bg-white p-3 rounded shadow space-y-2">
+                    <button
+                      onClick={() => removeExercise(setIndex, exIndex)}
+                      className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg"
+                      title="Remove Exercise"
+                    >×</button>
+                    <div>
+                      <label className="w-32 font-semibold text-sm">Title: </label>
+                      <input
+                        type="text"
+                        className="input input-bordered flex-1"
+                        value={ex.title}
+                        onChange={(e) =>
+                          handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
+                        }
+                        placeholder="e.g., Jumping Jacks"
+                      />
+                    </div>
+                    <div>
+                      <label className="w-32 font-semibold text-sm">Duration (s): </label>
+                      <input
+                        type="number"
+                        className="input input-bordered w-auto max-w-[80px]"
+                        placeholder="e.g., 30"
+                        value={ex.duration}
+                        onChange={(e) =>
+                          handleExerciseChange(setIndex, exIndex, 'duration', parseInt(e.target.value))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="w-32 font-semibold text-sm">Instructions: </label>
+                      <input
+                        type="text"
+                        className="input input-bordered flex-1"
+                        value={ex.instructions || ''}
+                        onChange={(e) =>
+                          handleExerciseChange(setIndex, exIndex, 'instructions', e.target.value)
+                        }
+                        placeholder="e.g., Keep back straight"
+                      />
+                    </div>
+                  </div>
+                  </SortableExercise>
+                ))}
+              </SortableContext>
+            </DndContext>
             <button
               onClick={() => addExercise(setIndex)}
               className="mt-2 text-sm text-blue-600 hover:underline"
