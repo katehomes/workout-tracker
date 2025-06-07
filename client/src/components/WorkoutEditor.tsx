@@ -1,40 +1,41 @@
-  import React, { useState, useEffect } from 'react';
-  import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-  import { useParams } from 'react-router-dom';
-  import { getWorkout } from '../api/workouts';
-  import { createWorkout, updateWorkout } from '../api/workouts';
+import { useParams } from 'react-router-dom';
+import { getWorkout } from '../api/workouts';
+import { createWorkout, updateWorkout } from '../api/workouts';
 
-  import type { Workout, WorkoutSet, Exercise } from '../types/types';
+import type { Workout, WorkoutSet, Exercise } from '../types/types';
 
-  import { MdOutlineDeleteForever } from "react-icons/md";
+import { MdOutlineDeleteForever } from "react-icons/md";
 
-  import {
-    DndContext,
-    closestCenter,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    KeyboardSensor,
-    type DragEndEvent,
-    DragOverlay,
-    type DragStartEvent
-  } from '@dnd-kit/core';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  KeyboardSensor,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent
+} from '@dnd-kit/core';
 
-  import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    useSortable,
-    verticalListSortingStrategy
-  } from '@dnd-kit/sortable';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
 
-  import { CSS } from '@dnd-kit/utilities';
+import { CSS } from '@dnd-kit/utilities';
 
-  const SortableExercise = ({
-    id,
-    children,
-  }: {
+import SortableOrderItem from './SortableOrderItem';
+
+import SetOrderEditor from './SetOrderEditor';
+
+  const SortableExercise = ({ id, children } : {
     id: string;
     children: (props: ReturnType<typeof useSortable>) => React.ReactNode;
   }) => {
@@ -53,29 +54,6 @@
     );
   };
 
-  const SortableOrderItem = ({ id, children }: { id: number; children: React.ReactNode }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
-    </div>
-  );
-};
-
   const WorkoutEditor = () => {
     const { id } = useParams<{ id: string }>();
     const [title, setTitle] = useState('');
@@ -85,6 +63,8 @@
     const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
     const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
     const [setOrder, setSetOrder] = useState<number[]>([]);
+    const [showSetOrderEditor, setShowSetOrderEditor] = useState(false);
+
 
     const navigate = useNavigate();
 
@@ -95,22 +75,10 @@
           setTitle(data.title);
           setTags(data.tags?.join(', ') ?? '');
           setSets(data.sets || []);
+          setSetOrder(data.setOrder || data.sets.map((_, i) => i));
         })
         .catch((err) => console.error('Failed to load workout:', err));
     }, [id]);
-
-      useEffect(() => {
-      if (!id) return;
-      getWorkout(id)
-        .then((data) => {
-          setTitle(data.title);
-          setTags(data.tags?.join(', ') ?? '');
-          setSets(data.sets || []);
-          setSetOrder(data.setOrder || data.sets.map((_, i) => i));
-        })
-        .catch(console.error);
-    }, [id]);
-
 
     const handleSetChange = <K extends keyof WorkoutSet>(
       index: number,
@@ -239,7 +207,7 @@
 
 
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4">
         <div className="flex justify-between items-center mb-4">
           <button
             onClick={() => navigate('/workouts')}
@@ -261,106 +229,57 @@
             {saveMessage}
           </div>
         )}
+        
+        <div className="flex-1 space-y-4">
+          <h2 className="text-xl font-bold">{id ? 'Edit Workout' : 'Create Workout'}</h2>
+          <input
+            type="text"
+            placeholder="Workout Title"
+            className="input input-bordered w-full"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
 
-        <h2 className="text-xl font-bold">{id ? 'Edit Workout' : 'Create Workout'}</h2>
+          <input
+            type="text"
+            placeholder="Tags (comma separated)"
+            className="input input-bordered w-full"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+          />
 
-        <input
-          type="text"
-          placeholder="Workout Title"
-          className="input input-bordered w-full"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <input
-          type="text"
-          placeholder="Tags (comma separated)"
-          className="input input-bordered w-full"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-        />
-
-        <div className="text-sm text-gray-600 italic">{setSummary}</div>
-
-        <div className="border rounded p-4 space-y-2 bg-gray-50 max-w-[250px]">
-          <h3 className="font-semibold text-lg">Set Order</h3>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={({ active, over }) => {
-              if (active.id !== over?.id) {
-                const oldIndex = setOrder.findIndex((id) => id === active.id);
-                const newIndex = setOrder.findIndex((id) => id === over?.id);
-                setSetOrder(arrayMove(setOrder, oldIndex, newIndex));
-              }
-            }}
+          <button
+            onClick={() => setShowSetOrderEditor(true)}
+            className="text-blue-600 hover:underline text-sm mt-2"
           >
-            <SortableContext items={setOrder} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
-                {setOrder.map((setIndex, orderIndex) => (
-                  <SortableOrderItem key={orderIndex} id={setIndex}>
-                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded shadow">
-                      <span className="font-medium">
-                        {sets[setIndex]?.title?.trim() || `Set ${setIndex + 1}`}
-                      </span>
-                      <button
-                        onClick={() => {
-                          const newOrder = [...setOrder];
-                          newOrder.splice(orderIndex, 1);
-                          setSetOrder(newOrder);
-                        }}
-                        className="text-red-600 hover:underline text-sm"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </SortableOrderItem>
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+            Edit Set Order
+          </button>
 
-          {/* {setOrder.map((setIndex, orderIndex) => (
-            <div key={orderIndex} className="flex items-center justify-between bg-white px-3 py-2 rounded shadow">
-              <div>
-                <span className="font-medium">
-                  {sets[setIndex]?.title?.trim() || `Set ${setIndex + 1}`}
-                </span>
-              </div>
-              <div className="space-x-2">
-                <button
-                  onClick={() => {
-                    const newOrder = [...setOrder];
-                    newOrder.splice(orderIndex, 1);
-                    setSetOrder(newOrder);
-                  }}
-                  className="text-red-600 hover:underline text-sm"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))} */}
-
-          <div className="mt-4">
-            <label className="block font-semibold mb-1">Add Set to Order</label>
-            <select
-              className="input input-bordered w-full"
-              onChange={(e) => {
-                const selected = parseInt(e.target.value);
-                if (!isNaN(selected)) setSetOrder([...setOrder, selected]);
-              }}
-            >
-              <option value="">Select a set...</option>
-              {sets.map((s, i) => (
-                <option key={i} value={i}>
-                  {s.title?.trim() || `Set ${i + 1}`}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="text-sm text-gray-600 italic">{setSummary}</div>
         </div>
 
+        {showSetOrderEditor && (
+          <div className="fixed inset-0  z-50 flex items-center justify-center">
+            <div className="bg-white p-6 rounded shadow-lg w-full max-w-md relative border-blue-500 border-1">
+              <button
+                onClick={() => setShowSetOrderEditor(false)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+                title="Close"
+              >
+                ×
+              </button>
+              <h2 className="text-lg font-bold mb-4">Edit Set Order</h2>
+              <SetOrderEditor
+                title={title}
+                sets={sets}
+                setOrder={setOrder}
+                setSetOrder={setSetOrder}
+              />
+            </div>
+          </div>
+        )}
+
+        <br/>
 
         <div className="flex overflow-x-auto gap-4 pb-4">
           {sets.map((set, setIndex) => (
