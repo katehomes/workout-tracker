@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import type { Workout, WorkoutSet } from "../../types/types";
+import type { Exercise, Workout, WorkoutSet } from "../../types/types";
 import { useNavigate, useParams } from 'react-router-dom';
 import { getWorkout } from '../../api/workouts';
 import TimerControls from './TimerControls';
@@ -8,16 +8,34 @@ import { groupSetOrder } from '../SetOrderEditor';
 
 const REST_SECONDS = 30; // Default rest time in seconds
 
-export interface WorkoutEntry {
+interface WorkoutEntry {
   setId: number;
   setIndex: number;
   completed: boolean;
+  exercises: ExerciseEntry[];
 }
 
-const getOrderEntries = (setOrder: number[]): WorkoutEntry[] => {
+interface ExerciseEntry {
+  exercise: Exercise;
+    exerciseIndex: number;
+  completed: boolean;
+}
+
+const getOrderEntries = (_setOrder: number[], _sets: WorkoutSet[]): WorkoutEntry[] => {
     const entries: WorkoutEntry[] = [];
-    setOrder.forEach((setId, index) => {
-        entries.push({ setId, setIndex: index, completed: false });
+    _setOrder.forEach((setId, index) => {
+        const set =_sets[setId];
+        if (!set) {
+            console.warn(`Set with ID ${setId} not found in sets array.`);
+            return;
+        }
+
+        const exerciseEntries: ExerciseEntry[] = [];
+
+        set.exercises.forEach((exercise, exIndex) => {
+            exerciseEntries.push({ exercise, completed: false, exerciseIndex: exIndex });
+        });
+        entries.push({ setId, setIndex: index, completed: false, exercises: exerciseEntries});
     });
     return entries;
 }
@@ -41,16 +59,19 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
     const [tags, setTags] = useState('');
     const [sets, setSets] = useState<WorkoutSet[]>([]);
     const [setOrder, setSetOrder] = useState<number[]>([]);
-    const groupedOrder = groupSetOrder(setOrder);
-    const orderEntries = getOrderEntries(setOrder);
+    const [workoutOrderEntries, setWorkoutOrderEntries] = useState<WorkoutEntry[]>(getOrderEntries([], []));
 
     const [currentSet, setCurrentSet] = useState(0);
     const [currentExercise, setCurrentExercise] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
-    const [timer, setTimer] = useState(5);
+    const [timer, setTimer] = useState(5);  
     const [isBreak, setIsBreak] = useState(false);
 
     const navigate = useNavigate();
+
+    const initializeWorkout = (workout: Workout) => {
+        setTitle(selectedWorkout.title);
+    }
 
     useEffect(() => {
       if (!id) return;
@@ -60,9 +81,10 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
           setTags(data.tags?.join(', ') ?? '');
           setSets(data.sets || []);
           setSetOrder(data.setOrder || data.sets.map((_, i) => i));
-          console.log("sets:", data.sets, "setOrder:", data.setOrder );
+          setWorkoutOrderEntries(getOrderEntries(data.setOrder || data.sets.map((_, i) => i), data.sets || []));
         })
         .catch((err) => console.error('Failed to load workout:', err));
+        console.log("WorkoutOrderEntries", workoutOrderEntries);
     }, [id]);
 
     useEffect(() => {
@@ -175,7 +197,121 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
 
         <div className="grid grid-cols-[25%_75%]  bg-amber-400 h-[90vh]">  
             <div id='player-left' className="col-span-1 row-span-3 border-1 h-100%">
-                Player Left
+                <div className=" bg-white shadow-lg overflow-hidden">
+                    <div className="relative h-10">
+                        <div className="absolute pl-4 pt-2 inset-0 backdrop backdrop-blur-10 bg-gradient-to-b from-transparent to-black backdrop backdrop-blur-5 text-white">
+                            <h3 className="font-bold">Set List & Excerises</h3>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="relative h-1 bg-gray-200">
+                            {[...workoutOrderEntries].reverse().map((entry, orderIndex) => {
+                                const percentWidth = ((setOrder.length - orderIndex) / setOrder.length) * 100;
+                                const bgColor = entry.completed ? 'bg-green-500' : 'bg-blue-500';
+                                //console.log("entry", sets[entry.setId].title ,"entry", entry, "orderIndex", orderIndex, "percentWidth", percentWidth, "bgColor", bgColor);
+                                return (
+                                    <div
+                                        key={`${entry}-${orderIndex}`}
+                                        className={`absolute h-full flex items-center justify-end ${bgColor}`}
+                                        style={{ width: `${percentWidth}%` }}
+                                    >
+                                        <div className="rounded-full w-5 h-5 bg-white shadow text-xs flex justify-center items-center">{setOrder.length - orderIndex}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className='overflow-y-auto max-h-[80vh]'>
+                        <ul className="text-xs sm:text-base divide-y border-t cursor-default">
+                            {workoutOrderEntries.map((entry, orderIndex) => {
+                                const setId = entry.setId;
+                                const setTitle = sets[setId]?.title?.trim() || `Set ${setId + 1}`;
+                                const entryTitle = `${setTitle} | completed: ${entry.completed}`;
+                                const completedExercises = entry.exercises.filter(ex => ex.completed).length;
+                                const strikethStyle = entry.completed ? 'line-through' : '';
+
+                                return (
+                                    <>
+                                        <li key={`-${orderIndex}-set-${setId}`}
+                                            className="flex items-center space-x-3 bg-yellow-300 hover:bg-yellow-100"
+                                        >
+                                            <div className={`flex-1 ml-10 ${strikethStyle}`}>{entryTitle}</div>
+                                            <div className="text-xs text-gray-400">
+                                                {completedExercises}/{entry.exercises.length}
+                                            </div>
+                                            <button className="focus:outline-none pr-4 group">
+                                                
+                                                <input
+                                                    disabled
+                                                    type="checkbox"
+                                                    className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500"
+                                                    checked={completedExercises == entry.exercises.length}
+                                                    onChange={(e) => {
+                                                        setWorkoutOrderEntries(prevEntries =>
+                                                            prevEntries.map((item, idx) =>
+                                                                idx === orderIndex ? { ...item, completed: e.target.checked } : item
+                                                            )
+                                                        );
+                                                    }}
+                                                />
+
+                                            </button>
+                                        </li>
+                                        {entry.exercises.map((ex, exIndex) => {
+                                            const exercise = ex.exercise;
+                                            const strikethStyle = ex.completed ? 'line-through' : '';
+
+                                            return (
+                                                <li key={`-${orderIndex}-exercise-${setId}-${exIndex}`}
+                                                    className={`flex items-center space-x-3 hover:bg-gray-100 ${strikethStyle}`}
+                                                >
+                                                    <button className="p-3 hover:bg-green-500 group focus:outline-none">
+                                                        { currentExercise === exIndex && isRunning ? (
+                                                            <svg className="w-4 h-4 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="2"></rect></svg>
+                                                        ) : (
+                                                            <p>#{exIndex}</p>
+                                                        )}
+                                                    </button>
+                                                    <div className="flex-1 ml-10">{exercise.title}</div>
+                                                    <div className="text-xs text-gray-400">{formatTime(exercise.duration)}</div>
+                                                    <button className="focus:outline-none pr-4 group">
+                                                        <input type="checkbox" value="" 
+                                                            className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                                            onChange={(e) => {
+                                                                setWorkoutOrderEntries(prevEntries => {
+                                                                    return prevEntries.map((item, idx) => {
+                                                                        if (idx === orderIndex) {
+                                                                            const updatedExercises = item.exercises.map((exItem, exIdx) =>
+                                                                                exIdx === exIndex
+                                                                                    ? { ...exItem, completed: e.target.checked }
+                                                                                    : exItem
+                                                                            );
+
+                                                                            // Check if all exercises are completed to auto-update set completion
+                                                                            const allCompleted = updatedExercises.every(ex => ex.completed);
+
+                                                                            return {
+                                                                                ...item,
+                                                                                exercises: updatedExercises,
+                                                                                completed: allCompleted, // update set-level completion automatically
+                                                                            };
+                                                                        }
+                                                                        return item;
+                                                                    });
+                                                                });
+                                                            }}
+                                                        ></input>
+                                                    </button>
+                                                </li>
+                                            )
+                                        })}
+                                    </>
+                                )
+                            })}
+                        </ul>
+                    </div>
+                </div>
             </div>  
             <div id='player-right' className="col-span-1 row-span-3 border-1 h-100% grid grid-rows-[40%_40%_20%]">
                 <div className="min-h-[90vh] bg-gray-100 flex flex-col items-center justify-center overflow-hidden  ">
@@ -247,69 +383,7 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                         </div>    
                         
                     </div>
-                    <div className="w-150 bg-white rounded-lg shadow-lg overflow-hidden">
-                        <div className="relative h-10">
-                            <div className="absolute p-4 inset-0 flex flex-row justify-between bg-gradient-to-b from-transparent to-gray-900 backdrop backdrop-blur-5 text-white">
-                                <h3 className="font-bold">Excersie List</h3>
-                            </div>
-                        </div>
-                        <div>
-                            <div className="relative h-1 bg-gray-200">
-                                {orderEntries.reverse().map((entry, orderIndex) => {
-                                    const percentWidth = ((setOrder.length - orderIndex) / setOrder.length) * 100;
-                                    const bgColor = entry.completed ? 'bg-green-500' : 'bg-blue-500';
-                                    console.log("entry", sets[entry.setId].title ,"entry", entry, "orderIndex", orderIndex, "percentWidth", percentWidth, "bgColor", bgColor);
-                                    return (
-                                        <div
-                                            key={`${entry}-${orderIndex}`}
-                                            className={`absolute h-full flex items-center justify-end ${bgColor}`}
-                                            style={{ width: `${percentWidth}%` }}
-                                        >
-                                            <div className="rounded-full w-3 h-3 bg-white shadow"></div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div className='overflow-y-auto max-h-64'>
-                            <ul className="text-xs sm:text-base divide-y border-t cursor-default">
-                                {groupedOrder.map((entry, orderIndex) => {
-                                    const setId = entry.setId;
-                                    const setTitle = sets[setId]?.title?.trim() || `Set ${setId + 1}`;
-                                    const setRepeats = entry.repeat! || 1;
-
-                                    return (
-                                        <>
-                                            <li key={`-${orderIndex}-set-${setId}`}
-                                                className="flex items-center space-x-3 bg-yellow-300 hover:bg-yellow-100"
-                                            >
-                                                <div className="flex-1 ml-10">{setTitle} - Repeat {setRepeats}x</div>
-                                            </li>
-                                            {sets[setId].exercises.map((ex, exIndex) => (
-                                                <li key={`-${orderIndex}-exercise-${setId}-${exIndex}`}
-                                                    className="flex items-center space-x-3 hover:bg-gray-100"
-                                                >
-                                                    <button className="p-3 hover:bg-green-500 group focus:outline-none">
-                                                        { currentExercise === exIndex && isRunning ? (
-                                                            <svg className="w-4 h-4 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="2"></rect></svg>
-                                                        ) : (
-                                                            <p>#{exIndex}</p>
-                                                        )}
-                                                    </button>
-                                                    <div className="flex-1">{ex.title}</div>
-                                                    <div className="text-xs text-gray-400">{formatTime(ex.duration)}</div>
-                                                    <button className="focus:outline-none pr-4 group">
-                                                       <input id="default-checkbox" type="checkbox" value="" className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"></input>
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </>
-                                    )
-                                })}
-                            </ul>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>  
             
