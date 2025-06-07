@@ -3,6 +3,10 @@ import type { Workout } from "../types/types";
 import { getWorkouts } from "../api/workouts";
 import { Link } from "react-router-dom";
 
+import { RiPlayList2Fill } from "react-icons/ri";
+import { RiDeleteBin2Fill } from "react-icons/ri";
+import { RiEdit2Fill } from "react-icons/ri";
+
 const WorkoutList: React.FC = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
 
@@ -34,12 +38,18 @@ const WorkoutList: React.FC = () => {
           </div>
           <div className="mt-4 flex gap-2">
             <Link
+              to={`/workouts/player/${workout._id}`}
+              className="text-green-500 hover:underline"
+            >
+              <RiPlayList2Fill className="text-xl"/>
+            </Link>
+            <Link
               to={`/workouts/edit/${workout._id}`}
               className="text-blue-500 hover:underline"
             >
-              Edit
+              <RiEdit2Fill className="text-xl"/>
             </Link>
-            <button className="text-red-500 hover:underline">Delete</button>
+            <button className="text-red-500 text-xl hover:underline"><RiDeleteBin2Fill /></button>
           </div>
         </div>
       ))}  

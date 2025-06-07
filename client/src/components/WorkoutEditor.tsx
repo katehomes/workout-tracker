@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { getWorkout } from '../api/workouts';
 import { createWorkout, updateWorkout } from '../api/workouts';
 
-import type { Workout, WorkoutSet, Exercise } from '../types/types';
+import type { WorkoutSet, Exercise } from '../types/types';
 
 import { MdOutlineDeleteForever } from "react-icons/md";
 
@@ -30,8 +30,6 @@ import {
 } from '@dnd-kit/sortable';
 
 import { CSS } from '@dnd-kit/utilities';
-
-import SortableOrderItem from './SortableOrderItem';
 
 import SetOrderEditor from './SetOrderEditor';
 
