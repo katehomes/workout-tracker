@@ -1,8 +1,8 @@
 import React from "react";
 import { RiSkipForwardFill } from "react-icons/ri";
 import { RiSkipBackFill } from "react-icons/ri";
-import { RiPlayLargeFill } from "react-icons/ri";
-import { RiPauseLargeFill } from "react-icons/ri";
+import { RiPlayCircleLine } from "react-icons/ri";
+import { RiPauseCircleFill } from "react-icons/ri";
 
 interface TimerControlsProps {
     onStart: () => void;
@@ -26,11 +26,11 @@ const TimerControls: React.FC<TimerControlsProps> = ({
             </button>
             {isRunning ? (
                 <button onClick={onPause} aria-label="Pause">
-                    <RiPauseLargeFill />
+                    <RiPauseCircleFill size={28}/>
                 </button>
             ) : (
                 <button onClick={onStart} aria-label="Start">
-                    <RiPlayLargeFill />
+                    <RiPlayCircleLine size={28}/>
                 </button>
             )}
             <button onClick={onSkipForward} aria-label="Skip Forward">
