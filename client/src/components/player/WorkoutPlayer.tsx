@@ -83,6 +83,7 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
           setSets(data.sets || []);
           setSetOrder(data.setOrder || data.sets.map((_, i) => i));
           setWorkoutOrderEntries(getOrderEntries(data.setOrder || data.sets.map((_, i) => i), data.sets || []));
+          setTimer(data.sets[0]?.exercises[0]?.duration || 5);
         })
         .catch((err) => console.error('Failed to load workout:', err));
         console.log("WorkoutOrderEntries", workoutOrderEntries);
@@ -183,6 +184,11 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
     const currentSetTitle = sets[currentSet]?.title?.trim() || `Set ${currentSet + 1}`;
     const currentExerciseTitle = sets[currentSet]?.exercises[currentExercise]?.title?.trim() || `Exercise ${currentExercise + 1}`;
     const currentExerciseInstructions = sets[currentSet]?.exercises[currentExercise]?.instructions || 'No instructions available';
+    
+    const currentExerciseObj = sets[currentSet]?.exercises[currentExercise];
+    const currentExerciseDuration = currentExerciseObj?.duration || 1; // fallback to avoid /0
+    const currentExPerWidth = Math.round((timer / currentExerciseDuration) * 100);
+
 
     return (<>
         <div id="player-grid" className="grid grid-cols-[25%_75%]">
@@ -247,7 +253,10 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                         </div>
                         <div>
                             <div className="relative h-1 bg-gray-200">
-                                <div className="absolute h-full w-1/2 bg-green-500 flex items-center justify-end">
+                                <div 
+                                    className="absolute h-full w-1/2 bg-green-500 flex items-center justify-end"
+                                    style={{ width: `${currentExPerWidth}%` }}
+                                >
                                     <div className="rounded-full w-3 h-3 bg-white shadow"></div>
                                 </div>
                             </div>
