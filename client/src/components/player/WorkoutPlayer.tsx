@@ -198,20 +198,11 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
 
         </div>
 
-        <div className="grid grid-cols-[25%_75%]  bg-amber-400 h-[90vh]">  
+        <div className="grid grid-cols-[25%_50%_25%]  bg-amber-400 h-[90vh]">  
             <div id='player-left' className="col-span-1 row-span-3 border-1 h-100%">
-                <FullExerciseOrderList
-                    workoutOrderEntries={workoutOrderEntries}
-                    setWorkoutOrderEntries={setWorkoutOrderEntries}
-                    currentSet={currentSet}
-                    currentExercise={currentExercise}
-                    isRunning={isRunning}
-                    setOrder={setOrder}
-                    sets={sets}
-                    />
-
+                left side
             </div>  
-            <div id='player-right' className="col-span-1 row-span-3 border-1 h-100% grid grid-rows-[40%_40%_20%]">
+            <div id='player-middle' className="col-span-1 row-span-3 border-1 h-100% grid grid-rows-[40%_40%_20%]">
                 <div className="min-h-[90vh] bg-gray-100 flex flex-col items-center justify-center overflow-hidden  ">
                     <div className="relative max-w-xl w-full h-36 bg-white rounded-lg shadow-lg overflow-hidde mb-10">
                         <div className="absolute inset-0 rounded-lg overflow-hidden bg-red-200">
@@ -284,7 +275,18 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                     
                 </div>
             </div>  
-            
+            <div id='player-right' className="col-span-1 row-span-3 border-1 h-100%">
+                <FullExerciseOrderList
+                    workoutOrderEntries={workoutOrderEntries}
+                    setWorkoutOrderEntries={setWorkoutOrderEntries}
+                    currentSet={currentSet}
+                    currentExercise={currentExercise}
+                    isRunning={isRunning}
+                    setOrder={setOrder}
+                    sets={sets}
+                    />
+
+            </div>
         </div>
         </>
     );

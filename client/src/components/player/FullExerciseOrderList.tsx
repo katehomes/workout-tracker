@@ -80,53 +80,56 @@ const FullExerciseOrderList: React.FC<Props> = ({
             const completedExercises = entry.exercises.filter(ex => ex.completed).length;
             const strikeStyle = entry.completed ? 'line-through text-gray-400' : '';
             const percent = Math.round((completedExercises / entry.exercises.length) * 100);
+            const isCurrent = setId === currentSet;
 
             return (
               <React.Fragment key={`set-${setId}`}> 
-                <li className="flex items-center justify-between bg-gray-50 px-4 py-2 hover:bg-gray-100">
+                <li className={`flex items-center justify-between px-4 py-2 hover:bg-gray-100 ${isCurrent ? 'bg-yellow-100 border-l-4 border-yellow-400' : 'bg-gray-50'}`}>
                   <div className={`flex-1 font-medium ${strikeStyle}`}>{`${setTitle}`}</div>
                   <div className="flex items-center space-x-2 text-xs text-gray-500 mr-2">
                     {getPercentageIcon(percent)}
                     <span>{percent}%</span>
                   </div>
                 </li>
-                {entry.exercises.map((ex, exIndex) => (
-                  <li
-                    key={`exercise-${setId}-${exIndex}`}
-                    className={`flex items-center justify-between px-6 py-2 text-sm ${ex.completed ? 'line-through text-gray-400' : 'text-gray-800'} hover:bg-gray-50`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-5 text-xs text-gray-500">#{exIndex + 1}</div>
-                      <div className="font-normal">{ex.exercise.title}</div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="text-xs text-gray-400">{formatTime(ex.exercise.duration)}</div>
-                      <input
-                        type="checkbox"
-                        checked={ex.completed}
-                        onChange={(e) => {
-                          setWorkoutOrderEntries(prevEntries =>
-                            prevEntries.map((item, idx) => {
-                              if (idx === orderIndex) {
-                                const updatedExercises = item.exercises.map((exItem, exIdx) =>
-                                  exIdx === exIndex ? { ...exItem, completed: e.target.checked } : exItem
-                                );
-                                const allCompleted = updatedExercises.every(ex => ex.completed);
-                                return {
-                                  ...item,
-                                  exercises: updatedExercises,
-                                  completed: allCompleted,
-                                };
-                              }
-                              return item;
-                            })
-                          );
-                        }}
-                        className="w-4 h-4 text-green-500 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
-                      />
-                    </div>
-                  </li>
-                ))}
+                {entry.exercises.map((ex, exIndex) => {
+                  const isCurrentExercise = isCurrent && exIndex === currentExercise;
+                  return (
+                    <li
+                      key={`exercise-${setId}-${exIndex}`}
+                      className={`flex items-center justify-between px-6 py-2 text-sm ${ex.completed ? 'line-through text-gray-400' : 'text-gray-800'} ${isCurrentExercise ? 'bg-yellow-50 border-l-2 border-yellow-300' : ''} hover:bg-gray-50`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-5 text-xs text-gray-500">#{exIndex + 1}</div>
+                        <div className="font-normal">{ex.exercise.title}</div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="text-xs text-gray-400">{formatTime(ex.exercise.duration)}</div>
+                        <input
+                          type="checkbox"
+                          checked={ex.completed}
+                          onChange={(e) => {
+                            setWorkoutOrderEntries(prevEntries =>
+                              prevEntries.map((item, idx) => {
+                                if (idx === orderIndex) {
+                                  const updatedExercises = item.exercises.map((exItem, exIdx) =>
+                                    exIdx === exIndex ? { ...exItem, completed: e.target.checked } : exItem
+                                  );
+                                  const allCompleted = updatedExercises.every(ex => ex.completed);
+                                  return {
+                                    ...item,
+                                    exercises: updatedExercises,
+                                    completed: allCompleted,
+                                  };
+                                }
+                                return item;
+                              })
+                            );
+                          }}
+                          className="w-4 h-4 text-green-500 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                        />
+                      </div>
+                    </li>
+                )})}
               </React.Fragment>
             );
           })}
