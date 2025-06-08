@@ -36,6 +36,7 @@ type Props = {
   isRunning: boolean;
   setOrder: number[];
   sets: { title?: string }[];
+  workoutCompleted: boolean;
 };
 
 const FullExerciseOrderList: React.FC<Props> = ({
@@ -45,17 +46,33 @@ const FullExerciseOrderList: React.FC<Props> = ({
   isRunning,
   setOrder,
   sets,
+  workoutCompleted,
 }) => {
+
+  const getSetStateColor = (entry: WorkoutEntry) => {
+    if (entry.completed) return 'bg-green-500 ';
+    if (currentExercise?.setOrderIndex === entry.setOrderIndex) return 'bg-yellow-500';
+    return 'bg-blue-500';
+  }
+
+  const workoutPercentCompleted = Math.round(
+    (workoutOrderEntries.filter(entry => entry.completed).length / workoutOrderEntries.length) * 100);
+    
   return (
+    <>
     <div className="bg-white shadow-lg overflow-hidden rounded-md border border-gray-200">
       <div className="relative h-12 bg-gradient-to-r from-gray-700 to-gray-900 text-white px-4 flex items-center font-semibold text-sm uppercase tracking-wide">
-        Set List & Exercises
+        <div className='flex-1'>Set List & Exercises</div>
+        <div className="flex items-center space-x-2 text-xs text-gray-500 mr-2">
+                    {getPercentageIcon(workoutPercentCompleted)}
+                    <span>{workoutPercentCompleted}%</span>
+        </div>
       </div>
 
       <div className="relative h-1 bg-gray-200">
         {[...workoutOrderEntries].reverse().map((entry, orderIndex) => {
           const percentWidth = ((setOrder.length - orderIndex) / setOrder.length) * 100;
-          const bgColor = entry.completed ? 'bg-green-500' : 'bg-blue-500';
+          const bgColor = getSetStateColor(entry);
           return (
             <div
               key={`${entry.setId}-${orderIndex}`}
@@ -82,7 +99,10 @@ const FullExerciseOrderList: React.FC<Props> = ({
 
             return (
               <React.Fragment key={`${orderIndex}-set-${setId}`}> 
-                <li className={`flex items-center justify-between px-4 py-2 hover:bg-gray-100 ${isCurrent ? 'bg-yellow-100 border-l-4 border-yellow-400' : 'bg-gray-50'}`}>
+                <li className={`flex items-center justify-between pl-1 pr-4 py-2 hover:bg-gray-100 ${isCurrent ? 'bg-yellow-100 border-l-4 border-yellow-400' : 'bg-gray-50'}`}>
+                  <div className="rounded-full w-5 h-5 mx-2 bg-white shadow text-xs flex justify-center items-center font-semibold">
+                     {orderIndex + 1}
+                  </div>
                   <div className={`flex-1 font-medium ${strikeStyle}`}>{`${setTitle}`}</div>
                   <div className="flex items-center space-x-2 text-xs text-gray-500 mr-2">
                     {getPercentageIcon(percent)}
@@ -134,23 +154,16 @@ const FullExerciseOrderList: React.FC<Props> = ({
         </ul>
       </div>
     </div>
+
+    <div>
+          { workoutCompleted && (
+                        <div className="text-2xl font-bold text-green-600">
+                            Workout Completed! 🎉
+                        </div>
+                    )}
+    </div>
+    </>
   );
 };
 
 export default FullExerciseOrderList;
-
-// Add this to your global CSS or Tailwind config:
-// .custom-scrollbar::-webkit-scrollbar {
-//   width: 6px;
-// }
-// .custom-scrollbar::-webkit-scrollbar-track {
-//   background: transparent;
-// }
-// .custom-scrollbar::-webkit-scrollbar-thumb {
-//   background-color: #cbd5e0;
-//   border-radius: 3px;
-// }
-// .custom-scrollbar {
-//   scrollbar-width: thin;
-//   scrollbar-color: #cbd5e0 transparent;
-// }

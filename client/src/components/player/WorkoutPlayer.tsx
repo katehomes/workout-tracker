@@ -4,8 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getWorkout } from '../../api/workouts';
 import TimerControls from './TimerControls';
 import TimerDisplay, { formatTime } from './TimerDisplay';
-import { groupSetOrder } from '../SetOrderEditor';
 import FullExerciseOrderList from './FullExerciseOrderList';
+import Confetti from 'react-confetti';
 
 const REST_SECONDS = 7; // Default rest time in seconds
 
@@ -69,19 +69,37 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
 
     const [currentSet, setCurrentSet] = useState<WorkoutEntry | null>(null);
     const [currentExercise, setCurrentExercise] = useState<ExerciseEntry | null>(null);
+    const [workoutCompleted, setWorkoutCompleted] = useState<boolean>(false);
     
 
     const navigate = useNavigate();
 
-    const initializeWorkout = () => {
+    const initializeWorkout = (reset: boolean) => {
         console.log("Initializing workout...");
 
-        setCurrentSet(workoutOrderEntries[0]);
+        setWorkoutCompleted(false);
 
-        setCurrentExercise(workoutOrderEntries[0].exercises[0]);
+        if (reset) {
+            setWorkoutOrderEntries(prev =>
+                prev.map(entry => ({
+                    ...entry,
+                    completed: false,
+                    exercises: entry.exercises.map(ex => ({
+                        ...ex,
+                        completed: false
+                    }))
+                }))
+            );
+        }
 
-        setTimer(currentExercise?.exercise.duration || 5);
-    }
+        const firstSet = workoutOrderEntries[0];
+        const firstExercise = workoutOrderEntries[0]?.exercises[0];
+
+        setCurrentSet(firstSet);
+        setCurrentExercise(firstExercise);
+        setTimer(firstExercise?.exercise?.duration || 5);
+    };
+
 
     useEffect(() => {
       if (!id) return;
@@ -96,7 +114,7 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
         })
         .then(() => {
             console.log("WorkoutOrderEntries", workoutOrderEntries);
-            initializeWorkout();
+            initializeWorkout(false);
         })
         .catch((err) => console.error('Failed to load workout:', err));
         
@@ -150,6 +168,13 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
             if (nextExerciseIndex < currentSetObj.exercises.length) {
                 setCurrentExercise({...currentSet!.exercises[nextExerciseIndex]});
                 setTimer(currentSetObj.exercises[nextExerciseIndex].duration  || 5);
+                return;
+            }
+            
+            const nextSetIndex = currentSet?.setOrderIndex! + 1;
+            if (nextSetIndex >= workoutOrderEntries.length) {
+                console.log("No more sets left, completing workout.");
+                completeWorkout();
             } else {
                 endOfSet();
             }
@@ -173,7 +198,7 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                 };
             });
     })};
-        
+
     const endOfSet = () => {
         startBreak();
     }
@@ -191,10 +216,20 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
             setCurrentExercise(workoutOrderEntries[nextSetIndex].exercises[0]);
             setTimer(sets[nextSetId]?.exercises[0]?.duration  || 5);
         } else {
-            setIsRunning(false);
-            console.log("🎉 Workout complete!");
+            console.log("No more sets left, completing workout.");
+            completeWorkout();
         }
     };
+
+    const completeWorkout = () => {
+        setIsRunning(false);
+        setTimer(0);
+        setWorkoutCompleted(true);
+        setCurrentSet(null);
+        setCurrentExercise(null);
+
+        console.log("Workout completed! 🎉");
+    }
 
     const setSummary = (() => {
       if (!sets.length || !setOrder.length) return '';
@@ -247,6 +282,31 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
             </div>  
             <div id='player-middle' className="col-span-1 row-span-3 border-1 h-100% grid grid-rows-[40%_40%_20%]">
                 <div className="min-h-[90vh] bg-gray-100 flex flex-col items-center justify-center overflow-hidden  ">
+                    {workoutCompleted ? (
+                        <>
+                        <Confetti />
+                        <div className="flex flex-col items-center justify-center text-center p-10 space-y-6">
+                            <h1 className="text-4xl font-bold text-green-700">🎉 Workout Complete!</h1>
+                            <p className="text-lg text-gray-700">You finished <strong>{setOrder.length}</strong> set{setOrder.length > 1 && 's'} with {workoutOrderEntries.reduce((total, set) => total + set.exercises.length, 0)} exercise{workoutOrderEntries.reduce((total, set) => total + set.exercises.length, 0) > 1 && 's'}!</p>
+
+                            <div className="flex space-x-4">
+                            <button
+                                onClick={() => initializeWorkout(true)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                            >
+                                🔁 Repeat Workout
+                            </button>
+                            <button
+                                onClick={() => navigate('/workouts')}
+                                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition"
+                            >
+                                ↩️ Back to List
+                            </button>
+                            </div>
+                        </div>
+                        </>
+                        ) : (
+                        <>
                     <div className="relative max-w-xl w-full h-36 bg-white rounded-lg shadow-lg overflow-hidde mb-10">
                         <div className="absolute inset-0 rounded-lg overflow-hidden bg-red-200">
                             <img alt="" className='object-cover w-full h-full'
@@ -319,8 +379,10 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                         </div>    
                         
                     </div>
-                    
+                      </>
+            )}
                 </div>
+                
             </div>  
             <div id='player-right' className="col-span-1 row-span-3 border-1 h-100%">
                 <FullExerciseOrderList
@@ -330,6 +392,7 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                     isRunning={isRunning}
                     setOrder={setOrder}
                     sets={sets}
+                    workoutCompleted={workoutCompleted}
                     />
 
             </div>
