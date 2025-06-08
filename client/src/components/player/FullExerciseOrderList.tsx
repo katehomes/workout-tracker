@@ -1,5 +1,5 @@
 import React from 'react';
-import type { WorkoutEntry } from './WorkoutPlayer';
+import type { WorkoutEntry, ExerciseEntry } from './WorkoutPlayer';
 import { formatTime } from './TimerDisplay';
 import {
   TbPercentage,
@@ -32,8 +32,7 @@ const getPercentageIcon = (percent: number) => {
 type Props = {
   workoutOrderEntries: WorkoutEntry[];
   setWorkoutOrderEntries: React.Dispatch<React.SetStateAction<WorkoutEntry[]>>;
-  currentSet: number;
-  currentExercise: number;
+  currentExercise: ExerciseEntry | null;
   isRunning: boolean;
   setOrder: number[];
   sets: { title?: string }[];
@@ -42,7 +41,6 @@ type Props = {
 const FullExerciseOrderList: React.FC<Props> = ({
   workoutOrderEntries,
   setWorkoutOrderEntries,
-  currentSet,
   currentExercise,
   isRunning,
   setOrder,
@@ -80,10 +78,10 @@ const FullExerciseOrderList: React.FC<Props> = ({
             const completedExercises = entry.exercises.filter(ex => ex.completed).length;
             const strikeStyle = entry.completed ? 'line-through text-gray-400' : '';
             const percent = Math.round((completedExercises / entry.exercises.length) * 100);
-            const isCurrent = setId === currentSet;
+            const isCurrent = orderIndex === currentExercise?.setOrderIndex;
 
             return (
-              <React.Fragment key={`set-${setId}`}> 
+              <React.Fragment key={`${orderIndex}-set-${setId}`}> 
                 <li className={`flex items-center justify-between px-4 py-2 hover:bg-gray-100 ${isCurrent ? 'bg-yellow-100 border-l-4 border-yellow-400' : 'bg-gray-50'}`}>
                   <div className={`flex-1 font-medium ${strikeStyle}`}>{`${setTitle}`}</div>
                   <div className="flex items-center space-x-2 text-xs text-gray-500 mr-2">
@@ -92,10 +90,10 @@ const FullExerciseOrderList: React.FC<Props> = ({
                   </div>
                 </li>
                 {entry.exercises.map((ex, exIndex) => {
-                  const isCurrentExercise = isCurrent && exIndex === currentExercise;
+                  const isCurrentExercise = isCurrent && exIndex === currentExercise?.exOrderIndex;
                   return (
                     <li
-                      key={`exercise-${setId}-${exIndex}`}
+                      key={`${orderIndex}-exercise-${setId}-${exIndex}`}
                       className={`flex items-center justify-between px-6 py-2 text-sm ${ex.completed ? 'line-through text-gray-400' : 'text-gray-800'} ${isCurrentExercise ? 'bg-yellow-50 border-l-2 border-yellow-300' : ''} hover:bg-gray-50`}
                     >
                       <div className="flex items-center space-x-3">

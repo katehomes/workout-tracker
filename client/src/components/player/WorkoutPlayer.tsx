@@ -7,19 +7,20 @@ import TimerDisplay, { formatTime } from './TimerDisplay';
 import { groupSetOrder } from '../SetOrderEditor';
 import FullExerciseOrderList from './FullExerciseOrderList';
 
-const REST_SECONDS = 30; // Default rest time in seconds
+const REST_SECONDS = 7; // Default rest time in seconds
 
 export interface WorkoutEntry {
   setId: number;
-  setIndex: number;
+  setOrderIndex: number;
   completed: boolean;
   exercises: ExerciseEntry[];
 }
 
-interface ExerciseEntry {
+export interface ExerciseEntry {
   exercise: Exercise;
-    exerciseIndex: number;
+ exOrderIndex: number;
   completed: boolean;
+  setOrderIndex: number;
 }
 
 const getOrderEntries = (_setOrder: number[], _sets: WorkoutSet[]): WorkoutEntry[] => {
@@ -34,9 +35,9 @@ const getOrderEntries = (_setOrder: number[], _sets: WorkoutSet[]): WorkoutEntry
         const exerciseEntries: ExerciseEntry[] = [];
 
         set.exercises.forEach((exercise, exIndex) => {
-            exerciseEntries.push({ exercise, completed: false, exerciseIndex: exIndex });
+            exerciseEntries.push({ exercise, completed: false, exOrderIndex: exIndex, setOrderIndex: index});
         });
-        entries.push({ setId, setIndex: index, completed: false, exercises: exerciseEntries});
+        entries.push({ setId, setOrderIndex: index, completed: false, exercises: exerciseEntries});
     });
     return entries;
 }
@@ -62,37 +63,65 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
     const [setOrder, setSetOrder] = useState<number[]>([]);
     const [workoutOrderEntries, setWorkoutOrderEntries] = useState<WorkoutEntry[]>(getOrderEntries([], []));
 
-    const [currentSet, setCurrentSet] = useState(0);
-    const [currentExercise, setCurrentExercise] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
     const [timer, setTimer] = useState(5);  
     const [isBreak, setIsBreak] = useState(false);
 
+    const [currentSet, setCurrentSet] = useState<WorkoutEntry | null>(null);
+    const [currentExercise, setCurrentExercise] = useState<ExerciseEntry | null>(null);
+    
+
     const navigate = useNavigate();
 
-    const initializeWorkout = (workout: Workout) => {
-        setTitle(selectedWorkout.title);
+    const initializeWorkout = () => {
+        console.log("Initializing workout...");
+
+        setCurrentSet(workoutOrderEntries[0]);
+
+        setCurrentExercise(workoutOrderEntries[0].exercises[0]);
+
+        setTimer(currentExercise?.exercise.duration || 5);
     }
 
     useEffect(() => {
       if (!id) return;
       getWorkout(id)
         .then((data) => {
-          setTitle(data.title);
-          setTags(data.tags?.join(', ') ?? '');
-          setSets(data.sets || []);
-          setSetOrder(data.setOrder || data.sets.map((_, i) => i));
-          setWorkoutOrderEntries(getOrderEntries(data.setOrder || data.sets.map((_, i) => i), data.sets || []));
-          setTimer(data.sets[0]?.exercises[0]?.duration || 5);
+        console.log("Workout data loaded:", data);
+            setTitle(data.title);
+            setTags(data.tags?.join(', ') ?? '');
+            setSets(data.sets || []);
+            setSetOrder(data.setOrder);
+            setWorkoutOrderEntries(getOrderEntries(data.setOrder, data.sets || []));    
+        })
+        .then(() => {
+            console.log("WorkoutOrderEntries", workoutOrderEntries);
+            initializeWorkout();
         })
         .catch((err) => console.error('Failed to load workout:', err));
-        console.log("WorkoutOrderEntries", workoutOrderEntries);
+        
     }, [id]);
+
+    useEffect(() => {
+        if (workoutOrderEntries.length > 0 && !currentExercise) {
+            const firstSet = workoutOrderEntries[0];
+            if(firstSet) {
+                setCurrentSet(firstSet);
+                const firstExercise = workoutOrderEntries[0]?.exercises?.[0];
+                if (firstExercise) {
+                    setCurrentExercise(firstExercise);
+                    setTimer(firstExercise.exercise.duration || 5);
+                }
+            }
+        }
+    }, [workoutOrderEntries, currentExercise, currentSet]);
+
 
     useEffect(() => {
         if (!isRunning) return;
 
         if (timer === 0) {
+            console.log("Timer complete");
             handleTimerComplete();
             return;
         }
@@ -107,55 +136,63 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
 
     const handleTimerComplete = () => {
         if (isBreak) {
-            console.log("isBreak startNextExercise");
-            startNextExercise();
-        } else if (shouldStartBreak()) {
-            console.log("shouldStartBreak");
-            startBreak();
+            setIsBreak(false);
+            startNextSet();
         } else {
-            console.log("else startNextExercise");
-            startNextExercise();
+            console.log("Timer completed for current exercise");
+            console.log("current set", currentSet);
+            console.log("current currentExercise", currentExercise);
+            markExerciseComplete(currentSet?.setOrderIndex!, currentExercise?.exOrderIndex!);
+
+            const currentSetObj = sets[currentSet?.setId!];
+            const nextExerciseIndex = currentExercise?.exOrderIndex! + 1;
+
+            if (nextExerciseIndex < currentSetObj.exercises.length) {
+                setCurrentExercise({...currentSet!.exercises[nextExerciseIndex]});
+                setTimer(currentSetObj.exercises[nextExerciseIndex].duration  || 5);
+            } else {
+                endOfSet();
+            }
         }
     };
 
-    const shouldStartBreak = () => {
-        const set = selectedWorkout.sets[currentSet];
-        if (!set || !set.exercises || set.exercises.length === 0) return false;
-        const exerciseCount = set.exercises.length;
-        return currentExercise < exerciseCount - 1 ;//&& selectedWorkout.sets[currentSet].restSeconds > 0;
-    };
+    const markExerciseComplete = (setOrderIndex: number, exIndex: number) => {
+        setWorkoutOrderEntries(prevEntries => {
+            return prevEntries.map((entry, i) => {
+                if (i !== setOrderIndex) return entry;
+
+                const updatedExercises = entry.exercises.map((ex, j) =>
+                    j === exIndex ? { ...ex, completed: true } : ex
+                );
+                const isSetDone = updatedExercises.every(e => e.completed);
+
+                return {
+                    ...entry,
+                    exercises: updatedExercises,
+                    completed: isSetDone,
+                };
+            });
+    })};
+        
+    const endOfSet = () => {
+        startBreak();
+    }
 
     const startBreak = () => {
         setIsBreak(true);
         setTimer(REST_SECONDS);
-    };
-
-    const startNextExercise = () => {
-        setIsBreak(false);
-        const set = selectedWorkout.sets[currentSet];
-        if (!set || !set.exercises || set.exercises.length === 0) {
-            startNextSet();
-            return;
-        }
-        
-        const exercises = selectedWorkout.sets[currentSet].exercises;
-        
-        if (currentExercise < exercises.length - 1) {
-            setCurrentExercise(prev => prev + 1);
-            setTimer(exercises[currentExercise + 1].duration);
-        } else {
-            startNextSet();
-        }
-    };
+    }
 
     const startNextSet = () => {
-        if (currentSet < selectedWorkout.sets.length - 1) {
-            setCurrentSet(prev => prev + 1);
-            setCurrentExercise(0);
-            setTimer(selectedWorkout.sets[currentSet + 1].exercises[0].duration);
+        const nextSetIndex = currentSet?.setOrderIndex! + 1;
+        if (nextSetIndex < workoutOrderEntries.length) {
+            const nextSetId = workoutOrderEntries[nextSetIndex].setId;
+            setCurrentSet(workoutOrderEntries[nextSetIndex]);
+            setCurrentExercise(workoutOrderEntries[nextSetIndex].exercises[0]);
+            setTimer(sets[nextSetId]?.exercises[0]?.duration  || 5);
         } else {
             setIsRunning(false);
-            console.log("Workout complete!");
+            console.log("🎉 Workout complete!");
         }
     };
 
@@ -181,11 +218,11 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
         .join(' → ');
     })();
 
-    const currentSetTitle = sets[currentSet]?.title?.trim() || `Set ${currentSet + 1}`;
-    const currentExerciseTitle = sets[currentSet]?.exercises[currentExercise]?.title?.trim() || `Exercise ${currentExercise + 1}`;
-    const currentExerciseInstructions = sets[currentSet]?.exercises[currentExercise]?.instructions || 'No instructions available';
-    
-    const currentExerciseObj = sets[currentSet]?.exercises[currentExercise];
+    const currentSetTitle = sets[currentSet?.setId!]?.title?.trim() || `Set ${currentSet?.setOrderIndex! + 1}`;
+    const currentExerciseObj = currentExercise?.exercise;
+
+    const currentExerciseTitle = currentExerciseObj?.title?.trim() || `Exercise ${currentExercise?.exOrderIndex! + 1}`;
+    const currentExerciseInstructions = currentExerciseObj?.instructions || 'No instructions available';
     const currentExerciseDuration = currentExerciseObj?.duration || 1; // fallback to avoid /0
     const currentExPerWidth = Math.round((timer / currentExerciseDuration) * 100);
 
@@ -264,6 +301,7 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                         <div className="flex justify-between text-xs font-semibold text-gray-500 px-4 py-2">
                             <div>1:50</div>
                             <div className="flex flex-col space-x-3 p-2">
+                                {isBreak && <div className="text-yellow-500 text-sm">Break time!</div>}
                                 <TimerControls
                                     onStart={() => setIsRunning(true)}
                                     onPause={() => setIsRunning(false)}
@@ -288,7 +326,6 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                 <FullExerciseOrderList
                     workoutOrderEntries={workoutOrderEntries}
                     setWorkoutOrderEntries={setWorkoutOrderEntries}
-                    currentSet={currentSet}
                     currentExercise={currentExercise}
                     isRunning={isRunning}
                     setOrder={setOrder}
