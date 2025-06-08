@@ -251,16 +251,16 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({
                                 <span className="opacity-70">{currentExerciseInstructions}</span>
                             </div>
                         </div>
-                        <div>
-                            <div className="relative h-1 bg-gray-200">
+                        <div className="w-full">
+                            <div className="relative h-2 bg-gray-200 rounded overflow-hidden">
                                 <div 
-                                    className="absolute h-full w-1/2 bg-green-500 flex items-center justify-end"
-                                    style={{ width: `${currentExPerWidth}%` }}
+                                className="absolute h-full bg-green-500 flex items-center justify-end transition-all duration-300"
+                                style={{ width: `${currentExPerWidth}%` }}
                                 >
-                                    <div className="rounded-full w-3 h-3 bg-white shadow"></div>
                                 </div>
                             </div>
                         </div>
+
                         <div className="flex justify-between text-xs font-semibold text-gray-500 px-4 py-2">
                             <div>1:50</div>
                             <div className="flex flex-col space-x-3 p-2">
