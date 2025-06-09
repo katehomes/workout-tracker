@@ -2,7 +2,8 @@ import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import workoutRoutes from './routes/workouts';
+import workoutRoutes from './routes/workoutsRoutes';
+import exerciseRoutes from './routes/exerciseRoutes';
 
 dotenv.config();
 
@@ -11,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/workouts', workoutRoutes);
+app.use('/api/exercises', exerciseRoutes);
 
 mongoose.connect(process.env.MONGO_URI || 'mongodb://mongo:27017/workouts')
   .then(() => console.log('MongoDB connected'))

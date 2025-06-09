@@ -21,3 +21,10 @@ export interface Workout {
   createdAt?: string;
   updatedAt?: string;
 }
+
+type Media = {
+  url: string;
+  type: 'image' | 'gif' | 'video';
+  caption?: string;
+}
+
