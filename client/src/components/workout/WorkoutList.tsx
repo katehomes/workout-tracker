@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import type { Workout } from "../types/types";
-import { getWorkouts } from "../api/workouts";
+import type { Workout } from "../../types/types";
+import { getWorkouts } from "../../api/workoutsApi";
 import { Link } from "react-router-dom";
 
 import { RiPlayList2Fill } from "react-icons/ri";

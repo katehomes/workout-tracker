@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -27,4 +27,9 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found' });
+});
+
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("Unhandled Error:", err);
+  res.status(500).json({ error: 'Unexpected server error' });
 });

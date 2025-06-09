@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { Exercise, Workout, WorkoutSet } from "../../types/types";
 import { useNavigate, useParams } from 'react-router-dom';
-import { getWorkout } from '../../api/workouts';
+import { getWorkout } from '../../api/workoutsApi';
 import TimerControls from './TimerControls';
 import TimerDisplay, { formatTime } from './TimerDisplay';
 import FullExerciseOrderList from './FullExerciseOrderList';

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useParams } from 'react-router-dom';
-import { getWorkout } from '../api/workouts';
-import { createWorkout, updateWorkout } from '../api/workouts';
+import { getWorkout } from '../../api/workoutsApi';
+import { createWorkout, updateWorkout } from '../../api/workoutsApi';
 
-import type { WorkoutSet, Exercise } from '../types/types';
+import type { WorkoutSet, Exercise } from '../../types/types';
 
 import { MdOutlineDeleteForever } from "react-icons/md";
 
