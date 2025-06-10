@@ -42,14 +42,14 @@ const ExerciseList: React.FC<Props> = ({ onSelect, setEditorPanelOpen }) => {
       {filtered.length === 0 ? (
         <p className="text-gray-500">No exercises match your filters.</p>
       ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ul className="grid gap-4 grid-cols-[repeat(auto-fit,_minmax(300px,_1fr))]">
           {filtered.map((exercise) => {
             const previewImg = exercise.media?.find((m) => m.type === 'image')?.url;
 
             return (
               <li
                 key={exercise._id}
-                className="flex border rounded shadow bg-white cursor-pointer hover:bg-gray-50 transition max-w-md"
+                className="flex border rounded shadow bg-white cursor-pointer hover:bg-gray-50 transition"
                 onClick={() => onSelect(exercise._id!)}
                 onDoubleClick={handleDoubleClick}
               >
@@ -60,13 +60,11 @@ const ExerciseList: React.FC<Props> = ({ onSelect, setEditorPanelOpen }) => {
                     className="w-24 h-24 object-cover rounded-l"
                   />
                 )}
+                <div className={`w-2 h-24 ${getDifficultyClass(exercise.difficulty)}`}></div>
                 <div className="p-4 flex flex-col justify-center">
                   <h3 className="text-md font-semibold capitalize">{exercise.title}</h3>
                   <div className="text-xs text-gray-500 mt-1">
-                    <span className={`px-2 py-1 rounded-full border ${getDifficultyClass(exercise.difficulty)}`}>
-                      {exercise.difficulty}
-                    </span>
-                    <span className="ml-2">{exercise.tags.join(', ')}</span>
+                    {exercise.tags.join(', ')}
                   </div>
                 </div>
               </li>
@@ -75,6 +73,7 @@ const ExerciseList: React.FC<Props> = ({ onSelect, setEditorPanelOpen }) => {
         </ul>
       )}
     </div>
+
   );
 };
 
