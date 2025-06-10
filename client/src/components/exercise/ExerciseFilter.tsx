@@ -1,8 +1,6 @@
 import { useExerciseFilter } from '../../contexts/ExerciseFilterContext';
+import { MUSCLES, DIFFICULTIES } from '../../constants/exerciseConstants';
 
-const allTags = ['cardio', 'strength', 'hiit', 'core', "glutes", "shoulders", "hamstrings", "abs"]; // or dynamically fetched
-
-const allDifficulties = ['Easy', 'Moderate', 'Challenging'];
 
 export const getDifficultyClass = (difficulty: string) => {
   switch (difficulty) {
@@ -35,7 +33,7 @@ const ExerciseFilter = () => {
           onChange={(e) => setDifficulty(e.target.value)}
           className="border px-3 py-1 rounded"
         >
-          {allDifficulties.map((difficulty) => (
+          {DIFFICULTIES.map((difficulty) => (
             <option
               key={difficulty}
               value={difficulty}
@@ -49,7 +47,7 @@ const ExerciseFilter = () => {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {allTags.map((tag) => (
+        {MUSCLES.map((tag) => (
           <button
             key={tag}
             onClick={() => toggleTag(tag)}

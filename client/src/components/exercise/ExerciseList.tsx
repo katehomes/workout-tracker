@@ -26,7 +26,7 @@ const ExerciseList: React.FC<Props> = ({ onSelect, setEditorPanelOpen }) => {
     );
 
     const matchesSearch = !search || titleMatch || tagMatch;
-    const matchesTags = selectedTags.length === 0 || selectedTags.every((tag) => ex.tags.includes(tag));
+    const matchesTags = selectedTags.length === 0 || selectedTags.every((tag) => ex.tags.includes(tag.toLowerCase()));
     const matchesDifficulty = !difficulty || ex.difficulty === difficulty;
 
     return matchesSearch && matchesTags && matchesDifficulty;

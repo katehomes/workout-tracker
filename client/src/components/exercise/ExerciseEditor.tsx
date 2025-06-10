@@ -1,13 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createExercise, updateExercise, getExerciseById, type Exercise } from '../../api/exerciseApi';
-
-const MUSCLES = [
-  'Neck', 'Traps', 'Shoulders', 'Check', 'Biceps', 'Forearms', 
-  'Obliques', 'Abs', 'Hip Flexors', 'Inner Thighs', 'Quadriceps', 
-  'Calves', 'Upper Back', 'Lower Back', 'Glutes', 'Hamstrings'
-].sort((a, b) => a.localeCompare(b));
-
-const DIFFICULTIES = ['Easy', 'Moderate', 'Challenging'];
+import { MUSCLES, DIFFICULTIES } from '../../constants/exerciseConstants';
 
 interface Props {
   closePanel: () => void;
