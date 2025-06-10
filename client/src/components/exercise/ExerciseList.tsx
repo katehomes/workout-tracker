@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { getAllExercises, type Exercise } from '../../api/exerciseApi';
-import { Link } from 'react-router-dom';
 import { useExerciseFilter } from '../../contexts/ExerciseFilterContext';
 import { getDifficultyClass } from './ExerciseFilter';
 
