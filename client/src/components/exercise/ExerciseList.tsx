@@ -6,11 +6,12 @@ import { getDifficultyClass } from './ExerciseFilter';
 
 interface Props {
   onSelect: (id: string) => void;
+  setEditorPanelOpen: (open: boolean) => void;
 }
 
 
 
-const ExerciseList: React.FC<Props> = ({ onSelect }) => {
+const ExerciseList: React.FC<Props> = ({ onSelect, setEditorPanelOpen }) => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const { search, selectedTags, difficulty } = useExerciseFilter();
 
@@ -31,6 +32,9 @@ const ExerciseList: React.FC<Props> = ({ onSelect }) => {
     return matchesSearch && matchesTags && matchesDifficulty;
   });
 
+  const handleDoubleClick = () => {
+    setEditorPanelOpen(true);
+  };
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Exercises</h2>
@@ -47,6 +51,7 @@ const ExerciseList: React.FC<Props> = ({ onSelect }) => {
                 key={exercise._id}
                 className="flex border rounded shadow bg-white cursor-pointer hover:bg-gray-50 transition max-w-md"
                 onClick={() => onSelect(exercise._id!)}
+                onDoubleClick={handleDoubleClick}
               >
                 {previewImg && (
                   <img

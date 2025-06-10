@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createExercise, type Exercise } from '../../api/exerciseApi';
+import { createExercise, updateExercise, getExerciseById, type Exercise } from '../../api/exerciseApi';
 
 const MUSCLES = [
   'Neck', 'Traps', 'Shoulders', 'Check', 'Biceps', 'Forearms', 
@@ -11,12 +11,12 @@ const DIFFICULTIES = ['Easy', 'Moderate', 'Challenging'];
 
 interface Props {
   closePanel: () => void;
-  draft: Partial<Exercise> | null;
   setDraft: (draft: Partial<Exercise> | null) => void;
+  id?: string;
 }
 
 
-const CreateExercisePanel: React.FC<Props> = ({ closePanel, draft, setDraft }) => {
+const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [steps, setSteps] = useState<string[]>(['']);
@@ -25,19 +25,33 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, draft, setDraft }) =
   const [primaryMuscles, setPrimaryMuscles] = useState<string[]>([]);
   const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>([]);
 
-useEffect(() => {
-  setDraft({
-    title,
-    tags,
-    steps,
-    media,
-    difficulty,
-    primaryMuscles,
-    secondaryMuscles
-  });
-}, [title, tags, steps, media, difficulty, primaryMuscles, secondaryMuscles]);
+  useEffect(() => {
+    setDraft({
+      title,
+      tags,
+      steps,
+      media,
+      difficulty,
+      primaryMuscles,
+      secondaryMuscles
+    });
+  }, [id, title, tags, steps, media, difficulty, primaryMuscles, secondaryMuscles]);
 
-
+  useEffect(() => {
+  if (!id) return;
+    getExerciseById(id)
+      .then((data) => {
+        setTitle(data.title);
+        setTags(data.tags || []);
+        setSteps(data.steps || []);
+        setMedia(data.media || []);
+        setDifficulty(data.difficulty || 'Easy');
+        setPrimaryMuscles(data.primaryMuscles || []);
+        setSecondaryMuscles(data.secondaryMuscles || []);
+      })
+      .catch((err) => console.error('Failed to load workout:', err));
+  },[id]);
+  
 
   const addStep = () => setSteps([...steps, '']);
   const updateStep = (i: number, value: string) => {
@@ -62,7 +76,36 @@ useEffect(() => {
 
   const toggleTag = (tag: string) => {
     setTags(tags.includes(tag) ? tags.filter(t => t !== tag) : [...tags, tag]);
-  }
+  };
+
+  const handleSaveEdit = () => {
+    const exercise: Exercise = {
+      title,  
+      tags,
+      steps,
+      media,
+      difficulty,
+      primaryMuscles,
+      secondaryMuscles
+    };
+
+    if(id) {
+      updateExercise(id, exercise)
+        .then(() => {
+          setDraft(null);
+          closePanel();
+        })
+        .catch(console.error);
+    } else {
+      createExercise(exercise)
+        .then(() => {
+          setDraft(null);
+          closePanel();
+        })
+        .catch(console.error);
+    }
+  };
+    
 
   return (
     <div className="p-6 space-y-6">
@@ -71,27 +114,12 @@ useEffect(() => {
             &times; Close
         </button>
         <button
-          onClick={() => {
-            const newExercise: Exercise = {
-              title,
-              tags,
-              steps,
-              media,
-              difficulty,
-              primaryMuscles,
-              secondaryMuscles
-            };
-            createExercise(newExercise)
-              .then(() => {
-                setDraft(null);
-                closePanel();
-              })
-              .catch(console.error);
-          }}
+          onClick={handleSaveEdit}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-        >Create</button>
+        >{id ? ('Edit') : ('Save New')}
+        </button>
       </div>
-      <h2 className="text-2xl font-bold">Create New Exercise</h2>
+      <h2 className="text-2xl font-bold">{id ? ('Edit') : ('Create New')} Exercise</h2>
 
       <input
         className="w-full border p-2 rounded"
