@@ -14,6 +14,9 @@ export interface Exercise {
   tags: string[];
   steps: string[];
   media: Media[];
+  difficulty: 'Easy' | 'Moderate' | 'Challenging';
+  primaryMuscles: string[];
+  secondaryMuscles?: string[];
 }
 
 export const getAllExercises = async (): Promise<Exercise[]> => {

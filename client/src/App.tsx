@@ -6,6 +6,7 @@ import WorkoutEditor from "./components/workout/WorkoutEditor";
 import WorkoutPlayer from './components/player/WorkoutPlayer';
 import ExerciseList from './components/exercise/ExerciseList';
 import ExerciseDetail from './components/exercise/ExerciseDetail';
+import ExercisePage from './pages/ExercisePage';
 
 const App = () => {
   console.log("App mounted");
@@ -17,8 +18,7 @@ const App = () => {
         <Route path="/workouts/edit" element={<WorkoutEditor />} />
         <Route path="/workouts/player" element={<WorkoutPlayer />} />
         <Route path="/workouts/player/:id" element={<WorkoutPlayer />} />
-        <Route path="/exercises" element={<ExerciseList />} />
-        <Route path="/exercises/:id" element={<ExerciseDetail />} />
+        <Route path="/exercises" element={<ExercisePage />} />
       </Routes>
     </Router>
   );

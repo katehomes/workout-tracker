@@ -1,40 +1,68 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { getExerciseById, type Exercise } from '../../api/exerciseApi';
+import { getDifficultyClass } from './ExerciseFilter';
 
-const ExerciseDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+interface Props {
+  id?: string;
+  exercise?: Exercise;
+}
+
+const ExerciseDetail: React.FC<Props> = ({ id, exercise: propExercise }) => {
   const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [loading, setLoading] = useState<boolean>(!!id && !propExercise);
 
-  useEffect(() => {
-    if (id) {
-      getExerciseById(id).then(setExercise).catch(console.error);
-    }
-  }, [id]);
+useEffect(() => {
+  if (propExercise) {
+    setExercise(propExercise);
+    setLoading(false);
+  } else if (id) {
+    setLoading(true);
+    getExerciseById(id)
+      .then((data) => setExercise(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }
+}, [id, propExercise]);
 
-  if (!exercise) return <div>Loading...</div>;
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (!exercise) return <div className="p-6 text-red-600">Exercise not found.</div>;
+
+  const uniqueTags = Array.from(new Set(exercise.tags));
 
   return (
-    <div className="p-6">
-      <h2 className="text-3xl font-bold">{exercise.title}</h2>
-      <p className="text-gray-600 mb-2">{exercise.tags.join(', ')}</p>
-      <ol className="list-decimal list-inside mb-4">
-        {exercise.steps.map((step, i) => (
-          <li key={i}>{step}</li>
-        ))}
-      </ol>
-      <div className="grid grid-cols-2 gap-4">
-        {exercise.media.map((item, i) => (
-          <div key={i} className="rounded overflow-hidden shadow">
-            {item.type === 'image' || item.type === 'gif' ? (
-              <img src={item.url} alt={item.caption || ''} className="w-full" />
-            ) : (
-              <video src={item.url} controls className="w-full" />
-            )}
-            {item.caption && <p className="text-xs text-center mt-1">{item.caption}</p>}
-          </div>
-        ))}
+    <div className="p-6 space-y-4">
+      <h2 className="text-3xl font-bold capitalize">{exercise.title}</h2>
+      <span className={`px-2 py-1 rounded-full border ${getDifficultyClass(exercise.difficulty)}`}>
+        <strong>{exercise.difficulty}</strong>
+      </span>
+      <div className="text-gray-600">Tags: {uniqueTags.join(', ')}</div>
+
+      <div>
+        <h3 className="text-xl font-semibold mb-2">Steps</h3>
+        <ol className="list-decimal ml-6 space-y-1">
+          {exercise.steps.map((step, i) => (
+            <li key={i}>{step}</li>
+          ))}
+        </ol>
       </div>
+
+      {exercise.media && exercise.media.length > 0 && (
+        <div>
+          <h3 className="text-xl font-semibold mb-2">Media</h3>
+          <div className="flex flex-wrap gap-4">
+            {exercise.media.map((item, i) => (
+              <div key={i} className="space-y-2">
+                {item.type === 'gif' || item.type === 'image' ? (
+                  <img src={item.url} alt={item.caption} className="max-w-xs rounded shadow" />
+                ) : item.type === 'video' ? (
+                  <video src={item.url} controls className="max-w-xs rounded shadow" />
+                ) : null}
+                <p className="text-sm text-gray-500">{item.caption}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
