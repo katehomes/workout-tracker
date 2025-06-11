@@ -42,7 +42,7 @@ const ExerciseList: React.FC<Props> = ({ onSelect, setEditorPanelOpen }) => {
         <p className="text-gray-500">No exercises match your filters.</p>
       ) : (
         <ul className="grid gap-4 grid-cols-[repeat(auto-fit,_minmax(300px,_1fr))]">
-          {filtered.map((exercise) => {
+          {...filtered.sort((a, b) => a.title.localeCompare(b.title)).map((exercise) => {
             const previewImg = exercise.media?.find((m) => m.type === 'image')?.url;
 
             return (

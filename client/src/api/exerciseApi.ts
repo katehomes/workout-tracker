@@ -3,9 +3,11 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/exercises';
 
 export interface Media {
+  _id?: string;
   url: string;
   type: 'image' | 'gif' | 'video';
   caption?: string;
+  side?: 'left' | 'right' | 'both';
 }
 
 export interface Exercise {

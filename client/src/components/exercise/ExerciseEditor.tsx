@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createExercise, updateExercise, getExerciseById, type Exercise } from '../../api/exerciseApi';
 import { MUSCLES, DIFFICULTIES } from '../../constants/exerciseConstants';
+import MediaEditor, { getMediaTypeByTemplate } from './editor/MediaEditor';
 
 interface Props {
   closePanel: () => void;
@@ -17,6 +18,16 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
   const [difficulty, setDifficulty] = useState<Exercise['difficulty']>('Easy');
   const [primaryMuscles, setPrimaryMuscles] = useState<string[]>([]);
   const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>([]);
+
+  const [demos, setDemos] = useState<string[]>([]);
+  const [heros, setHeros] = useState<string[]>([]);
+  const [diagrams, setDiagrams] = useState<string[]>([]);
+
+  useEffect(() => {
+    console.log("demos", demos);
+    console.log("heros", heros);
+    console.log("diagrams", diagrams);
+  }, [demos, heros, diagrams])
 
   useEffect(() => {
     setDraft({
@@ -57,8 +68,26 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
     setList(list.includes(muscle) ? list.filter(m => m !== muscle) : [...list, muscle]);
   };
 
-  const addMedia = () => {
-    setMedia([...media, { url: '', type: 'image', caption: '', side: 'both' }]);
+  const addMedia = (template?: string) => {
+    if(!template) {
+      setMedia([...media, { url: '', type: 'image', caption: '', side: 'both' }]);
+      return;
+    }
+
+    setMedia([...media, { url: '', type: `${getMediaTypeByTemplate(template)}`, caption: `${title} ${template}`, side: 'both' }]);
+    switch (template) {
+      case 'demo':
+        setDemos([...demos, `${media.length}`]);
+        break;
+      case 'diagram':
+        setDiagrams([...diagrams, `${media.length}`]);
+        break;
+      case 'hero':
+        setHeros([...heros, `${media.length}`]);
+        break;
+      default:
+        break;
+    }
   };
 
   const updateMedia = (i: number, field: string, value: string) => {
@@ -69,6 +98,18 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
 
   const toggleTag = (tag: string) => {
     setTags(tags.includes(tag) ? tags.filter(t => t !== tag) : [...tags, tag]);
+  };
+
+  const toggleDemo = (demoId: string) => {
+    setDemos(demos.includes(demoId) ? demos.filter(dId => dId !== demoId) : [...demos, demoId]);
+  };
+
+  const toggleHero = (heroId: string) => {
+    setHeros(heros.includes(heroId) ? heros.filter(hId => hId !== heroId) : [...heros, heroId]);
+  };
+
+  const toggleDiagram = (diagId: string) => {
+    setDiagrams(diagrams.includes(diagId) ? diagrams.filter(dId => dId !== diagId) : [...diagrams, diagId]);
   };
 
   const handleSaveEdit = () => {
@@ -145,44 +186,10 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
         <button onClick={addStep} className="text-sm text-blue-600">+ Add Step</button>
       </div>
 
-      <div>
-        <label className="block font-semibold mb-1">Media</label>
-        {media.map((m, i) => (
-          <div key={i} className="grid grid-cols-4 gap-2 mb-2">
-            <input
-              className="border p-1 rounded col-span-2"
-              value={m.url}
-              onChange={(e) => updateMedia(i, 'url', e.target.value)}
-              placeholder="Media URL"
-            />
-            <select
-              className="border p-1 rounded"
-              value={m.type}
-              onChange={(e) => updateMedia(i, 'type', e.target.value)}
-            >
-              <option value="image">Image</option>
-              <option value="gif">GIF</option>
-              <option value="video">Video</option>
-            </select>
-            <select
-              className="border p-1 rounded"
-              value={m.side}
-              onChange={(e) => updateMedia(i, 'side', e.target.value)}
-            >
-              <option value="both">Both</option>
-              <option value="left">Left</option>
-              <option value="right">Right</option>
-            </select>
-            <input
-              className="border p-1 rounded col-span-4"
-              value={m.caption}
-              onChange={(e) => updateMedia(i, 'caption', e.target.value)}
-              placeholder="Caption"
-            />
-          </div>
-        ))}
-        <button onClick={addMedia} className="text-sm text-blue-600">+ Add Media</button>
-      </div>
+      <MediaEditor media={media} addMedia={addMedia} updateMedia={updateMedia} exerciseTitle={title}
+        demos={demos} diagrams={diagrams} heros={heros}   
+        toggleDemo={toggleDemo} toggleDiagram={toggleDiagram} toggleHero={toggleHero}
+      />
 
       <div>
         <label className="block font-semibold mb-1">Difficulty</label>
