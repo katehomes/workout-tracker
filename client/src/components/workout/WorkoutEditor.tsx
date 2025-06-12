@@ -52,8 +52,13 @@ import SetOrderEditor from './SetOrderEditor';
     );
   };
 
-  const WorkoutEditor = () => {
-    const { id } = useParams<{ id: string }>();
+  interface Props {
+    closePanel: () => void;
+    setDraft?: (draft: Partial<Exercise> | null) => void;
+    id?: string;
+  }
+  
+  const WorkoutEditor : React.FC<Props> = ({ closePanel, setDraft, id }) => {
     const [title, setTitle] = useState('');
     const [tags, setTags] = useState('');
     const [sets, setSets] = useState<WorkoutSet[]>([]);

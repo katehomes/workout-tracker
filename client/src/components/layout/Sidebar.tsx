@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { TbHomeStats, TbListDetails, TbYoga } from "react-icons/tb";
+import { TbHomeStats, TbListDetails, TbYoga, TbPlayerPlay  } from "react-icons/tb";
 
 const navItems = [
   { to: '/', icon: <TbHomeStats  size={20} />, label: 'Dashboard' },
   { to: '/exercises', icon: <TbYoga size={20} />, label: 'Exercises' },
-  { to: '/workouts', icon: <TbListDetails size={20} />, label: 'Workouts' }
+  { to: '/workouts', icon: <TbListDetails size={20} />, label: 'Workouts' },
+  { to: '/player', icon: <TbPlayerPlay  size={20} />, label: 'Player' }
 ];
 
 const Sidebar: React.FC = () => {

@@ -1,58 +1,64 @@
 import React, { useEffect, useState } from "react";
 import type { Workout } from "../../types/types";
 import { getWorkouts } from "../../api/workoutsApi";
+import { RiPlayList2Fill, RiDeleteBin2Fill, RiEdit2Fill } from "react-icons/ri";
 import { Link } from "react-router-dom";
 
-import { RiPlayList2Fill } from "react-icons/ri";
-import { RiDeleteBin2Fill } from "react-icons/ri";
-import { RiEdit2Fill } from "react-icons/ri";
+interface Props {
+  onSelect: (id: string) => void;
+  setEditorPanelOpen: (open: boolean) => void;
+}
 
-const WorkoutList: React.FC = () => {
+const WorkoutList: React.FC<Props> = ({ onSelect, setEditorPanelOpen }) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
 
   useEffect(() => {
     getWorkouts().then(setWorkouts).catch(console.error);
   }, []);
 
-  return (
-    <div className="p-4 space-y-4">
-      <Link
-        to="edit/"
-        className="inline-block mb-4 px-4 py-2 bg-green-500 text-white rounded"
-      >
-        + New Workout
-      </Link>
+  const handleDoubleClick = () => {
+    setEditorPanelOpen(true);
+  };
 
-      {workouts.map((workout) => (
-        <div key={workout._id} className="bg-white rounded-lg shadow p-4">
-          <div className="text-xl font-semibold">{workout.title}</div>
-          <div className="flex flex-wrap mt-2 gap-2">
-            {workout.tags?.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded"
-              >
-                {tag}
-              </span>
-            ))}
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">Workouts</h2>
+
+      <div className="grid gap-4 grid-cols-[repeat(auto-fit,_minmax(300px,_1fr))]">
+        {workouts.map((workout) => (
+          <div
+            key={workout._id}
+            className="flex border rounded shadow bg-white cursor-pointer hover:bg-gray-50 transition"
+            onClick={() => onSelect(workout._id!)}
+            onDoubleClick={handleDoubleClick}
+          >
+            <div className="w-2 h-24 bg-blue-400" />
+            <div className="p-4 flex flex-col justify-center flex-grow">
+              <h3 className="text-md font-semibold capitalize">{workout.title}</h3>
+              <div className="text-xs text-gray-500 mt-1">
+                {workout.tags?.join(', ')}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Link
+                  to={`/workouts/player/${workout._id}`}
+                  className="text-green-500 hover:text-green-700"
+                >
+                  <RiPlayList2Fill />
+                </Link>
+                <Link
+                  to={`/workouts/edit/${workout._id}`}
+                  className="text-blue-500 hover:text-blue-700"
+                >
+                  <RiEdit2Fill />
+                </Link>
+                <button className="text-red-500 hover:text-red-700">
+                  <RiDeleteBin2Fill />
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="mt-4 flex gap-2">
-            <Link
-              to={`/workouts/player/${workout._id}`}
-              className="text-green-500 hover:underline"
-            >
-              <RiPlayList2Fill className="text-xl"/>
-            </Link>
-            <Link
-              to={`/workouts/edit/${workout._id}`}
-              className="text-blue-500 hover:underline"
-            >
-              <RiEdit2Fill className="text-xl"/>
-            </Link>
-            <button className="text-red-500 text-xl hover:underline"><RiDeleteBin2Fill /></button>
-          </div>
-        </div>
-      ))}  
+        ))}
+      </div>
     </div>
   );
 };
