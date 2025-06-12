@@ -31,7 +31,6 @@ import {
 
 import { CSS } from '@dnd-kit/utilities';
 
-import SetOrderEditor from './SetOrderEditor';
 import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
 
   const SortableExercise = ({ id, children } : {
@@ -69,7 +68,6 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
     const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
     const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
-    const [showSetOrderEditor, setShowSetOrderEditor] = useState(false);
 
     useEffect(() => {
       if (!id) return;
@@ -248,31 +246,8 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
             onChange={(e) => {setTags(e.target.value.split(',').map(t => t.trim()))} }
           />
 
-          <button
-            onClick={() => setShowSetOrderEditor(true)}
-            className="text-blue-600 hover:underline text-sm mt-2"
-          >
-            Edit Set Order
-          </button>
-
           <div className="text-sm text-gray-600 italic">{setOrderSummary}</div>
         </div>
-
-        {showSetOrderEditor && (
-          <div className="fixed inset-0  z-50 flex items-center justify-center">
-            <div className="bg-white p-6 rounded shadow-lg w-full max-w-md relative border-blue-500 border-1">
-              <button
-                onClick={() => setShowSetOrderEditor(false)}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
-                title="Close"
-              >
-                ×
-              </button>
-              <h2 className="text-lg font-bold mb-4">Edit Set Order</h2>
-              <SetOrderEditor/>
-            </div>
-          </div>
-        )}
 
         <br/>
 
