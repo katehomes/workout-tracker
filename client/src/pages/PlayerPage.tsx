@@ -298,11 +298,12 @@ const PlayerPage: React.FC<WorkoutPlayerProps> = ({
 
                 >
                     {isCreatePanelOpen ? (
-                        <WorkoutEditor 
-                            closePanel={() => setIsCreatePanelOpen(false)}
-                            // setDraft={setDraftWorkout}
-                            // id={selectedWorkoutId || undefined}
-                        />
+                        // <WorkoutEditor 
+                        //     closePanel={() => setIsCreatePanelOpen(false)}
+                        //     // setDraft={setDraftWorkout}
+                        //     // id={selectedWorkoutId || undefined}
+                        // />
+                        null
 
                     ) : (
                         <div className="min-h-[90vh] bg-gray-100 flex flex-col items-center justify-center overflow-hidden  ">

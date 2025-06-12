@@ -6,29 +6,49 @@ import WorkoutEditor from '../components/workout/WorkoutEditor';
 import type { Workout } from '../types/types';
 import { WorkoutFilterProvider } from '../contexts/WorkoutFilterContext';
 import WorkoutFilter from '../components/workout/WorkoutFilter';
+import SetOrderEditor from '../components/workout/SetOrderEditor';
 
 const WorkoutPage: React.FC = () => {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
-  const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
+  const [isEditorPanelOpen, setIsEditorPanelOpen] = useState(false);
   const [draftWorkout, setDraftWorkout] = useState<Partial<Workout> | null>(null);
 
   return (
     <WorkoutFilterProvider>
         <PageLayout
-        leftPanel={<WorkoutFilter />}
-        //   rightPanel={
-        //     isCreatePanelOpen && draftWorkout ? (
-        //       <WorkoutDetail workout={draftWorkout as Workout} />
-        //     ) : selectedWorkoutId ? (
-        //       <WorkoutDetail id={selectedWorkoutId} />
-        //     ) : null
-        //   }
+            leftPanel={
+                isEditorPanelOpen && draftWorkout ? (
+                    // <WorkoutDetail workout={draftWorkout as Workout} />
+                    <>
+                        <h2 className="text-lg font-bold mb-4">Edit Set Order</h2>
+                        <SetOrderEditor
+                            title={draftWorkout.title!}
+                            sets={draftWorkout.sets!}
+                            setOrder={draftWorkout.setOrder!}
+                            setSetOrder={(newOrder) => setDraftWorkout({ ...draftWorkout, setOrder: newOrder })}
+                        />
+                    </>
+                ) : <WorkoutFilter />}
+            rightPanel={
+                isEditorPanelOpen && draftWorkout ? (
+                    <>
+                        {/* <h2 className="text-lg font-bold mb-4">Edit Set Order</h2>
+                        <SetOrderEditor
+                            title={draftWorkout.title!}
+                            sets={draftWorkout.sets!}
+                            setOrder={draftWorkout.setOrder!}
+                            setSetOrder={(newOrder) => setDraftWorkout({ ...draftWorkout, setOrder: newOrder })}
+                        /> */}
+                    </>
+                ) : null
+            }
         >
-        {isCreatePanelOpen ? (
+        {isEditorPanelOpen ? (
             <WorkoutEditor
-            closePanel={() => setIsCreatePanelOpen(false)}
-            setDraft={setDraftWorkout}
-            id={selectedWorkoutId || undefined}
+                closePanel={() => setIsEditorPanelOpen(false)}
+                setDraft={setDraftWorkout}
+                id={selectedWorkoutId || undefined}
+                draft={draftWorkout}
             />
         ) : (
             <div className="p-6 space-y-6">
@@ -37,7 +57,7 @@ const WorkoutPage: React.FC = () => {
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
                 onClick={() => {
                     setSelectedWorkoutId(null);
-                    setIsCreatePanelOpen(true);
+                    setIsEditorPanelOpen(true);
                 }}
                 >
                 Create New Workout
@@ -45,7 +65,7 @@ const WorkoutPage: React.FC = () => {
             </div>
             <WorkoutList
                 onSelect={(id: string) => setSelectedWorkoutId(id)}
-                setEditorPanelOpen={setIsCreatePanelOpen}
+                setEditorPanelOpen={setIsEditorPanelOpen}
             />
             </div>
         )}

@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { getWorkout } from '../../api/workoutsApi';
 import { createWorkout, updateWorkout } from '../../api/workoutsApi';
 
-import type { WorkoutSet, Exercise } from '../../types/types';
+import type { WorkoutSet, Exercise, Workout } from '../../types/types';
 
 import { MdOutlineDeleteForever } from "react-icons/md";
 
@@ -54,34 +54,54 @@ import SetOrderEditor from './SetOrderEditor';
 
   interface Props {
     closePanel: () => void;
-    setDraft?: (draft: Partial<Exercise> | null) => void;
+    setDraft: (draft: Partial<Workout> | null) => void;
+    draft?: Partial<Workout> | null;
     id?: string;
   }
   
-  const WorkoutEditor : React.FC<Props> = ({ closePanel, setDraft, id }) => {
+  const WorkoutEditor : React.FC<Props> = ({ closePanel, setDraft, id, draft }) => {
     const [title, setTitle] = useState('');
-    const [tags, setTags] = useState('');
+    const [tags, setTags] = useState<string[]>([]);
     const [sets, setSets] = useState<WorkoutSet[]>([]);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
     const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
     const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
     const [setOrder, setSetOrder] = useState<number[]>([]);
     const [showSetOrderEditor, setShowSetOrderEditor] = useState(false);
-
+    const [setOrderSummary, setSetOrderSummary] = useState<string>('');
 
     const navigate = useNavigate();
+
+      useEffect(() => {
+        setDraft({
+          title,
+          tags,
+          sets,
+          setOrder
+        });
+      }, [id, title, tags, sets, setOrder]);
+    
 
     useEffect(() => {
       if (!id) return;
       getWorkout(id)
         .then((data) => {
           setTitle(data.title);
-          setTags(data.tags?.join(', ') ?? '');
+          setTags(data.tags || []);
           setSets(data.sets || []);
           setSetOrder(data.setOrder || data.sets.map((_, i) => i));
         })
         .catch((err) => console.error('Failed to load workout:', err));
     }, [id]);
+
+    useEffect(() => {
+      if(!draft) return;
+      setTitle(draft.title!);
+      setTags(draft.tags || []);
+      setSets(draft.sets || []);
+      setSetOrder(draft.setOrder || []);
+      setSetOrderSummary(setSummary);
+    }, [draft]);
 
     const handleSetChange = <K extends keyof WorkoutSet>(
       index: number,
@@ -142,29 +162,28 @@ import SetOrderEditor from './SetOrderEditor';
         .join(' → ');
     })();
 
-    const handleSave = async () => {
-      try {
-        const workoutToSave = {
-          title,
-          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-          sets,
-          setOrder,
-        };
+    const handleSaveEdit = async () => {
+      const workoutToSave: Workout = {
+        title,
+        tags,
+        sets,
+        setOrder
+      };
 
-
-        if (id) {
-          await updateWorkout(id, workoutToSave);
-          setSaveMessage('✅ Workout updated!');
-          setTimeout(() => navigate('/workouts'), 2000);
-        } else {
-          const created = await createWorkout(workoutToSave);
-          setSaveMessage('✅ Workout created!');
-          setTimeout(() => navigate(`/workouts/edit/${created._id}`), 1500);
-        }
-      } catch (err) {
-        console.error('Failed to save workout:', err);
-        setSaveMessage('❌ Error saving workout.');
-        setTimeout(() => setSaveMessage(null), 5000); // Clear error message slower
+      if(id) {
+        await updateWorkout(id, workoutToSave)
+          .then(() => {
+            setDraft(null);
+            closePanel();
+          })
+          .catch(console.error);
+      } else {
+        await createWorkout(workoutToSave)
+          .then(() => {
+            setDraft(null);
+            closePanel();
+          })
+          .catch(console.error);
       }
     };
 
@@ -216,7 +235,7 @@ import SetOrderEditor from './SetOrderEditor';
               &times; Close
           </button>
           <button
-            onClick={handleSave}
+            onClick={handleSaveEdit}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >{id ? ('Edit') : ('Save New')}
           </button>
@@ -242,8 +261,8 @@ import SetOrderEditor from './SetOrderEditor';
             type="text"
             placeholder="Tags (comma separated)"
             className="input input-bordered w-full"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
+            value={tags.join(', ')}
+            onChange={(e) => {setTags(e.target.value.split(',').map(t => t.trim()))} }
           />
 
           <button
@@ -253,7 +272,7 @@ import SetOrderEditor from './SetOrderEditor';
             Edit Set Order
           </button>
 
-          <div className="text-sm text-gray-600 italic">{setSummary}</div>
+          <div className="text-sm text-gray-600 italic">{setOrderSummary}</div>
         </div>
 
         {showSetOrderEditor && (

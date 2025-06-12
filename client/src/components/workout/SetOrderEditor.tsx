@@ -101,7 +101,7 @@ const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, 
   };
 
   return (
-    <div className="border rounded p-4 space-y-2 bg-gray-50 max-w-md relative z-50">
+    <div className="border rounded bg-gray-50">
       <h3 className="font-semibold text-lg truncate" title={title}>
         {title}
       </h3>
@@ -117,7 +117,7 @@ const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, 
           strategy={verticalListSortingStrategy}
         >
         <div id="so-table" className="grid grid-rows-3 gap-1">
-            <div id="so-thead" className="grid grid-cols-[5%_70%_20%_5%] gap-1">
+            <div id="so-thead" className="grid grid-cols-[5%_60%_15%_10%] gap-1 justify-center">
                 <div className="border-b"></div>
                 <div className="text-left px-3 py-2 border-b">Set</div>
                 <div className="text-left px-3 py-2 border-b">Repeats</div>
@@ -131,7 +131,7 @@ const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, 
                     <>
                     <SortableOrderItem key={`set-${orderIndex}`} id={orderIndex}>
                     {({ attributes, listeners }) => (
-                        <div className="grid grid-cols-[5%_70%_20%_5%] gap-1">
+                        <div className="grid grid-cols-[5%_60%_15%_10%] gap-1 justify-center hover:bg-blue-100 bg-blue-200">
                             <div>
                                 <button
                                     className="cursor-grab text-gray-500 hover:text-gray-700 text-xl align-middle content-center "
@@ -178,7 +178,7 @@ const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, 
                 );
             })}
 
-            <div className={'grid grid-cols-[5%_70%_20%_5%] gap-1'} >
+            <div className={'grid grid-cols-[7%_60%_15%_10%] justify-center gap-1'} >
                 <div className="border-t ">
                     <span className='text-green-600 text-xs align-middle content-center'></span>
                 </div>
