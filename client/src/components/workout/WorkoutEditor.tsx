@@ -32,6 +32,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import SetOrderEditor from './SetOrderEditor';
+import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
 
   const SortableExercise = ({ id, children } : {
     id: string;
@@ -51,64 +52,48 @@ import SetOrderEditor from './SetOrderEditor';
       </div>
     );
   };
-
-  interface Props {
-    closePanel: () => void;
-    setDraft: (draft: Partial<Workout> | null) => void;
-    draft?: Partial<Workout> | null;
-    id?: string;
-  }
   
-  const WorkoutEditor : React.FC<Props> = ({ closePanel, setDraft, id, draft }) => {
-    const [title, setTitle] = useState('');
-    const [tags, setTags] = useState<string[]>([]);
-    const [sets, setSets] = useState<WorkoutSet[]>([]);
+  const WorkoutEditor : React.FC = () => {
+
+    const {
+      draft,
+      selectedWorkoutId: id,
+      resetDraft,
+      setTitle,
+      setTags,
+      setSets,
+      setSetOrder,
+      setIsEditorPanelOpen
+    } = useWorkoutDraft();
+
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
     const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
     const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
-    const [setOrder, setSetOrder] = useState<number[]>([]);
     const [showSetOrderEditor, setShowSetOrderEditor] = useState(false);
     const [setOrderSummary, setSetOrderSummary] = useState<string>('');
 
     const navigate = useNavigate();
 
-      useEffect(() => {
-        setDraft({
-          title,
-          tags,
-          sets,
-          setOrder
-        });
-      }, [id, title, tags, sets, setOrder]);
-    
-
     useEffect(() => {
       if (!id) return;
       getWorkout(id)
         .then((data) => {
-          setTitle(data.title);
-          setTags(data.tags || []);
-          setSets(data.sets || []);
-          setSetOrder(data.setOrder || data.sets.map((_, i) => i));
+          resetDraft({
+            title: data.title,
+            tags: data.tags || [],
+            sets: data.sets || [],
+            setOrder: data.setOrder || data.sets.map((_, i) => i)
+          });
         })
         .catch((err) => console.error('Failed to load workout:', err));
     }, [id]);
-
-    useEffect(() => {
-      if(!draft) return;
-      setTitle(draft.title!);
-      setTags(draft.tags || []);
-      setSets(draft.sets || []);
-      setSetOrder(draft.setOrder || []);
-      setSetOrderSummary(setSummary);
-    }, [draft]);
 
     const handleSetChange = <K extends keyof WorkoutSet>(
       index: number,
       field: K,
       value: WorkoutSet[K]
     ) => {
-      const newSets = [...sets];
+      const newSets = [...draft.sets!];
       newSets[index][field] = value;
       setSets(newSets);
     };
@@ -119,19 +104,20 @@ import SetOrderEditor from './SetOrderEditor';
       field: K,
       value: Exercise[K]
     ) => {
-      const newSets = [...sets];
+      const newSets = [...draft.sets!];
       newSets[setIndex].exercises[exIndex][field] = value;
       setSets(newSets);
     };
 
     const addSet = () => {
-      const newSet = { title: '', order: sets.length, exercises: [] };
-      setSets([...sets, newSet]);
-      setSetOrder([...setOrder, sets.length]);
+      console.log(draft);
+      const newSet = { title: '', order: draft.sets!.length, exercises: [] };
+      setSets([...draft.sets!, newSet]);
+      setSetOrder([...draft.setOrder!, draft.sets!.length]);
     };
 
     const addExercise = (setIndex: number) => {
-      const newSets = [...sets];
+      const newSets = [...draft.sets!];
       newSets[setIndex].exercises.push({
         title: '',
         duration: 0,
@@ -141,12 +127,12 @@ import SetOrderEditor from './SetOrderEditor';
     };
 
     const setSummary = (() => {
-      if (!sets.length || !setOrder.length) return '';
+      if (!draft.sets!.length || !draft.setOrder!.length) return '';
 
       const chunks: { index: number; count: number }[] = [];
 
-      for (let i = 0; i < setOrder.length; i++) {
-        const index = setOrder[i];
+      for (let i = 0; i < draft.setOrder!.length; i++) {
+        const index = draft.setOrder![i];
         if (chunks.length && chunks[chunks.length - 1].index === index) {
           chunks[chunks.length - 1].count += 1;
         } else {
@@ -156,7 +142,7 @@ import SetOrderEditor from './SetOrderEditor';
 
       return chunks
         .map(({ index, count }) => {
-          const label = sets[index]?.title?.trim() || `Set ${index + 1}`;
+          const label = draft.sets![index]?.title?.trim() || `Set ${index + 1}`;
           return count > 1 ? `${label} (x${count})` : label;
         })
         .join(' → ');
@@ -164,31 +150,31 @@ import SetOrderEditor from './SetOrderEditor';
 
     const handleSaveEdit = async () => {
       const workoutToSave: Workout = {
-        title,
-        tags,
-        sets,
-        setOrder
+        title: draft.title!,
+        tags: draft.tags!,
+        sets: draft.sets!,
+        setOrder: draft.setOrder!
       };
 
       if(id) {
         await updateWorkout(id, workoutToSave)
           .then(() => {
-            setDraft(null);
-            closePanel();
+            resetDraft();
+            setIsEditorPanelOpen(false);
           })
           .catch(console.error);
       } else {
         await createWorkout(workoutToSave)
           .then(() => {
-            setDraft(null);
-            closePanel();
+            resetDraft();
+            setIsEditorPanelOpen(false);
           })
           .catch(console.error);
       }
     };
 
     const removeExercise = (setIndex: number, exIndex: number) => {
-      const newSets = [...sets];
+      const newSets = [...draft.sets!];
       newSets[setIndex].exercises.splice(exIndex, 1);
       setSets(newSets);
     };
@@ -202,9 +188,9 @@ import SetOrderEditor from './SetOrderEditor';
 
     const handleDragStart = (event: DragStartEvent, setIndex: number) => {
       const { active } = event;
-      const index = sets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
+      const index = draft.sets![setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
       if (index !== -1) {
-        setActiveExercise(sets[setIndex].exercises[index]);
+        setActiveExercise(draft.sets![setIndex].exercises[index]);
       }
     };
 
@@ -214,10 +200,10 @@ import SetOrderEditor from './SetOrderEditor';
 
       if (!over || active.id === over.id) return;
 
-      const oldIndex = sets[setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
-      const newIndex = sets[setIndex].exercises.findIndex((_, i) => i.toString() === over.id);
+      const oldIndex = draft.sets![setIndex].exercises.findIndex((_, i) => i.toString() === active.id);
+      const newIndex = draft.sets![setIndex].exercises.findIndex((_, i) => i.toString() === over.id);
 
-      const newSets = [...sets];
+      const newSets = [...draft.sets!];
       newSets[setIndex].exercises = arrayMove(newSets[setIndex].exercises, oldIndex, newIndex);
       setSets(newSets);
     };
@@ -231,7 +217,7 @@ import SetOrderEditor from './SetOrderEditor';
     return (
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
-          <button onClick={closePanel} className="text-gray-500 hover:text-gray-800">
+          <button onClick={() => setIsEditorPanelOpen(false)} className="text-gray-500 hover:text-gray-800">
               &times; Close
           </button>
           <button
@@ -253,7 +239,7 @@ import SetOrderEditor from './SetOrderEditor';
             type="text"
             placeholder="Workout Title"
             className="input input-bordered w-full"
-            value={title}
+            value={draft.title}
             onChange={(e) => setTitle(e.target.value)}
           />
 
@@ -261,7 +247,7 @@ import SetOrderEditor from './SetOrderEditor';
             type="text"
             placeholder="Tags (comma separated)"
             className="input input-bordered w-full"
-            value={tags.join(', ')}
+            value={draft.tags!.join(', ')}
             onChange={(e) => {setTags(e.target.value.split(',').map(t => t.trim()))} }
           />
 
@@ -286,12 +272,7 @@ import SetOrderEditor from './SetOrderEditor';
                 ×
               </button>
               <h2 className="text-lg font-bold mb-4">Edit Set Order</h2>
-              <SetOrderEditor
-                title={title}
-                sets={sets}
-                setOrder={setOrder}
-                setSetOrder={setSetOrder}
-              />
+              <SetOrderEditor/>
             </div>
           </div>
         )}
@@ -299,7 +280,7 @@ import SetOrderEditor from './SetOrderEditor';
         <br/>
 
         <div className="flex overflow-x-auto gap-4 pb-4">
-          {sets.map((set, setIndex) => (
+          {draft.sets!.map((set, setIndex) => (
             <div key={setIndex} className="min-w-[300px] max-w-[auto] flex-shrink-0 p-4 rounded shadow bg-gray-100">
               <input
                 type="text"

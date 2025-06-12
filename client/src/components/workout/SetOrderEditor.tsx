@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -23,17 +23,11 @@ import { RxDragHandleDots2 } from "react-icons/rx";
 import { MdDragHandle } from "react-icons/md";
 import { MdOutlinePlaylistRemove } from "react-icons/md";
 import { TbPlaylistAdd } from "react-icons/tb";
+import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
 
 export interface SetOrderEntry {
   setId: number;
   repeat?: number;
-}
-
-interface SetOrderEditorProps {
-  title: string;
-  sets: { title?: string }[];
-  setOrder: number[];
-  setSetOrder: (order: number[]) => void;
 }
 
 export function flattenSetOrder(setOrder: SetOrderEntry[]): number[] {
@@ -58,9 +52,15 @@ export function groupSetOrder(flat: number[]): SetOrderEntry[] {
   return grouped;
 }
 
-const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, setSetOrder }) => {
+const SetOrderEditor: React.FC = () => {
+
+  const {draft, setSetOrder} = useWorkoutDraft();
+  
+  const sets = draft.sets!;
+  const setOrder: number[] = draft.setOrder!;
+  
   const sensors = useSensors(useSensor(PointerSensor));
-  const groupedOrder = groupSetOrder(setOrder);
+  const groupedOrder = useMemo(() => groupSetOrder(setOrder), [setOrder]);
   const [activeItem, setActiveItem] = useState<SetOrderEntry | null>(null);
   const [newItem, setNewItem] = useState<SetOrderEntry>({ setId: -1});
 
@@ -100,12 +100,25 @@ const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, 
     setSetOrder(flattenSetOrder(reordered));
   };
 
+  const addNewItem = () => {
+    console.log("addnewi sets", sets);
+    console.log("newItem", newItem);
+
+    const selectedSetId = newItem.setId;
+    if (!isNaN(selectedSetId) && selectedSetId != -1) {
+        const newSetOrder = [...setOrder]
+        for (let i = 0; i < (newItem.repeat ?? 1); i++) {
+            newSetOrder.push(selectedSetId);
+        }
+        console.log(newSetOrder);
+        setSetOrder(newSetOrder);
+        setNewItem({...newItem, setId: -1});
+    }
+    console.log("newItem", newItem);
+  }
+
   return (
     <div className="border rounded bg-gray-50">
-      <h3 className="font-semibold text-lg truncate" title={title}>
-        {title}
-      </h3>
-
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -128,13 +141,12 @@ const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, 
                 const setTitle = sets[entry.setId]?.title?.trim() || `Set ${entry.setId + 1}`;
 
                 return (
-                    <>
                     <SortableOrderItem key={`set-${orderIndex}`} id={orderIndex}>
                     {({ attributes, listeners }) => (
                         <div className="grid grid-cols-[5%_60%_15%_10%] gap-1 justify-center hover:bg-blue-100 bg-blue-200">
                             <div>
                                 <button
-                                    className="cursor-grab text-gray-500 hover:text-gray-700 text-xl align-middle content-center "
+                                    className="cursor-grab text-gray-500 hover:text-gray-700 text-sm align-middle content-center "
                                     title="Drag To Reorder"
                                     {...attributes}
                                     {...listeners}
@@ -173,8 +185,6 @@ const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, 
                         </div>
                     )}
                     </SortableOrderItem>
-                    </>
-                  
                 );
             })}
 
@@ -224,19 +234,7 @@ const SetOrderEditor: React.FC<SetOrderEditorProps> = ({ title, sets, setOrder, 
                 <div className='text-gray-500 text-m align-middle content-center border-t'>
                     <button
                         onClick={() => {
-                            console.log("newItem", newItem);
-
-                            const selectedSetId = newItem.setId;
-                            if (!isNaN(selectedSetId) && selectedSetId != -1) {
-                                const newSetOrder = [...setOrder]
-                                for (let i = 0; i < (newItem.repeat ?? 1); i++) {
-                                    newSetOrder.push(selectedSetId);
-                                }
-                                console.log(newSetOrder);
-                                setSetOrder(newSetOrder);
-                                setNewItem({...newItem, setId: -1});
-                            }
-                            console.log("newItem", newItem);
+                            addNewItem()
                         }}
                         className="text-green-600 align-middle content-center hover:text-white-700"
                     >
