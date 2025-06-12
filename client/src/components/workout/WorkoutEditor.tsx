@@ -70,9 +70,6 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
     const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
     const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
     const [showSetOrderEditor, setShowSetOrderEditor] = useState(false);
-    const [setOrderSummary, setSetOrderSummary] = useState<string>('');
-
-    const navigate = useNavigate();
 
     useEffect(() => {
       if (!id) return;
@@ -126,7 +123,7 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
       setSets(newSets);
     };
 
-    const setSummary = (() => {
+    const setOrderSummary = (() => {
       if (!draft.sets!.length || !draft.setOrder!.length) return '';
 
       const chunks: { index: number; count: number }[] = [];

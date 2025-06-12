@@ -38,7 +38,6 @@ export const WorkoutDraftProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const resetDraft = useCallback((initial?: Partial<Workout>) => {
     setDraft(initial || { title: '', tags: [], sets: [], setOrder: [] });
-    setSelectedWorkoutId(null);
   }, []);
 
   const closeEditorPanel = () => {
