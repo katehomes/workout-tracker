@@ -4,7 +4,7 @@ import { type Media } from '../../../api/exerciseApi';
 interface Props {
     index: number;
     media: Media;
-    updateMedia: (i: number, field: string, value: string) => void;
+    updateMedia: <K extends keyof Media>(i: number, field: K, value: Media[K]) => void
     demos: string[];
     diagrams: string[];
     heros: string[];
@@ -53,7 +53,7 @@ const MediaEditorItem: React.FC<Props> = ({ index, media, updateMedia, demos, di
             <select
                 className="border p-1 rounded w-full"
                 value={media.type}
-                onChange={(e) => updateMedia(index, 'type', e.target.value)}
+                onChange={(e) => updateMedia(index, 'type', e.target.value as Media['type'])}
             >
             <option value="image">Image</option>
             <option value="gif">GIF</option>
@@ -65,7 +65,7 @@ const MediaEditorItem: React.FC<Props> = ({ index, media, updateMedia, demos, di
             <select
                 className="border p-1 rounded"
                 value={media.side}
-                onChange={(e) => updateMedia(index, 'side', e.target.value)}
+                onChange={(e) => updateMedia(index, 'side', e.target.value as Media['side'])}
             >
             <option value="both">Both</option>
             <option value="left">Left</option>

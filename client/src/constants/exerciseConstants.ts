@@ -1,5 +1,5 @@
 export const MUSCLES = [
-  'Neck', 'Traps', 'Shoulders', 'Check', 'Biceps', 'Forearms', 
+  'Neck', 'Traps', 'Triceps', 'Shoulders', 'Chest', 'Biceps', 'Forearms', 
   'Obliques', 'Abs', 'Hip Flexors', 'Inner Thighs', 'Quadriceps', 
   'Calves', 'Upper Back', 'Lower Back', 'Glutes', 'Hamstrings'
 ].sort((a, b) => a.localeCompare(b));

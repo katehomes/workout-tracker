@@ -15,10 +15,15 @@ export interface Exercise {
   title: string;
   tags: string[];
   steps: string[];
-  media: Media[];
   difficulty: 'Easy' | 'Moderate' | 'Challenging';
   primaryMuscles: string[];
   secondaryMuscles?: string[];
+  media: Media[];
+  mediaMetadata: {
+    demos: string[],
+    diagrams: string[],
+    heros: string[] 
+  };
 }
 
 export const getAllExercises = async (): Promise<Exercise[]> => {

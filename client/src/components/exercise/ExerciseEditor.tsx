@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createExercise, updateExercise, getExerciseById, type Exercise } from '../../api/exerciseApi';
+import { createExercise, updateExercise, getExerciseById, type Exercise, type Media } from '../../api/exerciseApi';
 import { MUSCLES, DIFFICULTIES } from '../../constants/exerciseConstants';
 import MediaEditor, { getMediaTypeByTemplate } from './editor/MediaEditor';
 
@@ -14,10 +14,15 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [steps, setSteps] = useState<string[]>(['']);
-  const [media, setMedia] = useState<any[]>([]);
   const [difficulty, setDifficulty] = useState<Exercise['difficulty']>('Easy');
   const [primaryMuscles, setPrimaryMuscles] = useState<string[]>([]);
   const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>([]);
+  
+  const [media, setMedia] = useState<Exercise["media"]>([]);
+  
+  const [mediaMetadata, setMediaMetadata] = useState<Exercise["mediaMetadata"]>({
+    demos: [], diagrams: [], heros: []
+  });
 
   const [demos, setDemos] = useState<string[]>([]);
   const [heros, setHeros] = useState<string[]>([]);
@@ -27,6 +32,9 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
     console.log("demos", demos);
     console.log("heros", heros);
     console.log("diagrams", diagrams);
+    setMediaMetadata({
+      demos: demos, diagrams: diagrams, heros: heros
+    });
   }, [demos, heros, diagrams])
 
   useEffect(() => {
@@ -37,9 +45,10 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
       media,
       difficulty,
       primaryMuscles,
-      secondaryMuscles
+      secondaryMuscles,
+      mediaMetadata
     });
-  }, [id, title, tags, steps, media, difficulty, primaryMuscles, secondaryMuscles]);
+  }, [id, title, tags, steps, media, mediaMetadata, difficulty, primaryMuscles, secondaryMuscles]);
 
   useEffect(() => {
   if (!id) return;
@@ -90,11 +99,12 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
     }
   };
 
-  const updateMedia = (i: number, field: string, value: string) => {
+  const updateMedia = <K extends keyof Media>(i: number, field: K, value: Media[K]) => {
     const updated = [...media];
-    updated[i][field] = value;
+    updated[i] = { ...updated[i], [field]: value };
     setMedia(updated);
   };
+
 
   const toggleTag = (tag: string) => {
     setTags(tags.includes(tag) ? tags.filter(t => t !== tag) : [...tags, tag]);
@@ -113,15 +123,19 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
   };
 
   const handleSaveEdit = () => {
+    console.log("mediaMetadata", mediaMetadata);
     const exercise: Exercise = {
       title,  
       tags,
       steps,
       media,
+      mediaMetadata,
       difficulty,
       primaryMuscles,
       secondaryMuscles
     };
+
+    console.log("exToSave", exercise );
 
     if(id) {
       updateExercise(id, exercise)

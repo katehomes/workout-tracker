@@ -6,7 +6,7 @@ interface Props {
   exerciseTitle: string;
   media: Media[];
   addMedia: (template?: string) => void;
-  updateMedia: (i: number, field: string, value: string) => void;
+  updateMedia: <K extends keyof Media>(i: number, field: K, value: Media[K]) => void
   demos: string[];
   diagrams: string[];
   heros: string[];

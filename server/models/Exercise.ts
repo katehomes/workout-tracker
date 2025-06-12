@@ -17,7 +17,13 @@ const exerciseSchema = new mongoose.Schema(
     secondaryMuscles: [String],
     steps: [String],
     appliesTo: {type: String, enum: ['left', 'right', 'both']},
-    media: [mediaSchema],
+    media: {type: [mediaSchema], required: true},
+    mediaMetadata: {
+      type: {
+        demos: [String],
+        diagrams: [String],
+        heros: [String]
+      }, required: true }
   },
   { timestamps: true }
 );
