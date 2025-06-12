@@ -5,7 +5,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  KeyboardSensor,
   type DragEndEvent,
   DragOverlay,
   type DragStartEvent
@@ -13,13 +12,9 @@ import {
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import SortableOrderItem from './SortableOrderItem';
-import { RxDragHandleHorizontal } from "react-icons/rx";
-import { RxDragHandleDots2 } from "react-icons/rx";
 import { MdDragHandle } from "react-icons/md";
 import { MdOutlinePlaylistRemove } from "react-icons/md";
 import { TbPlaylistAdd } from "react-icons/tb";
@@ -133,13 +128,12 @@ const SetOrderEditor: React.FC = () => {
             <div id="so-thead" className="grid grid-cols-[5%_60%_15%_10%] gap-1 justify-center">
                 <div className="border-b"></div>
                 <div className="text-left px-3 py-2 border-b">Set</div>
-                <div className="text-left px-3 py-2 border-b">Repeats</div>
+                <div className="text-left py-2 border-b">Repeats</div>
                 <div className="border-b"></div>
             </div>
 
             {groupedOrder.map((entry, orderIndex) => {
                 const setTitle = sets[entry.setId]?.title?.trim() || `Set ${entry.setId + 1}`;
-
                 return (
                     <SortableOrderItem key={`set-${orderIndex}`} id={orderIndex}>
                     {({ attributes, listeners }) => (
@@ -214,7 +208,7 @@ const SetOrderEditor: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div className="px-3 font-medium border-t align-middle content-center">
+                <div className="py-2 font-medium border-t align-middle content-center">
                     <select
                         id="so-new-repeat" 
                         className="select select-xs"
