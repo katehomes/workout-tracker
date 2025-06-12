@@ -212,20 +212,15 @@ import SetOrderEditor from './SetOrderEditor';
     return (
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
-          <button
-            onClick={() => navigate('/workouts')}
-            className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
-          >
-            ← Back
+          <button onClick={closePanel} className="text-gray-500 hover:text-gray-800">
+              &times; Close
           </button>
-
           <button
             onClick={handleSave}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Save Workout
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          >{id ? ('Edit') : ('Save New')}
           </button>
-        </div>
+      </div>
 
         {saveMessage && (
           <div className="text-sm text-green-700 bg-green-100 border border-green-300 rounded px-3 py-1 w-fit mb-2">

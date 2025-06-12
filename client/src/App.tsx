@@ -16,8 +16,6 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/workouts/" element={<WorkoutPage />} />
-        {/* <Route path="/workouts/edit/:id" element={<WorkoutEditor />} />
-        <Route path="/workouts/edit" element={<WorkoutEditor />} /> */}
         <Route path="/player" element={<PlayerPage/>} />
         <Route path="/player/:id" element={<PlayerPage />} />
         <Route path="/exercises" element={<ExercisePage />} />

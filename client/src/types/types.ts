@@ -15,7 +15,7 @@ export interface WorkoutSet {
 export interface Workout {
   _id?: string;
   title: string;
-  tags?: string[];
+  tags: string[];
   sets: WorkoutSet[];
   setOrder: number[];
   createdAt?: string;
