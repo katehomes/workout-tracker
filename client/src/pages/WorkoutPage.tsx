@@ -6,6 +6,9 @@ import { WorkoutFilterProvider } from '../contexts/WorkoutFilterContext';
 import WorkoutFilter from '../components/workout/WorkoutFilter';
 import SetOrderEditor from '../components/workout/SetOrderEditor';
 import { WorkoutDraftProvider, useWorkoutDraft } from '../contexts/WorkoutDraftContext';
+import FullExerciseOrderList from '../components/player/FullExerciseOrderList';
+import type { WorkoutEntry } from '../components/player/WorkoutPlayer';
+import WorkoutPreviewPanel from '../components/workout/WorkoutPreviewPanel';
 
 const WorkoutPageContent: React.FC = () => {
   const {
@@ -39,7 +42,11 @@ const WorkoutPageContent: React.FC = () => {
             <WorkoutFilter />
           )
         }
-        rightPanel={null}
+        rightPanel={
+            ((isEditorPanelOpen || selectedWorkoutId) && draft) ? (
+                <WorkoutPreviewPanel/>
+            ) : null
+        }
       >
         {isEditorPanelOpen ? (
           <WorkoutEditor />
