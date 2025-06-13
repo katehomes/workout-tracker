@@ -1,25 +1,20 @@
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
-export interface IWorkout extends mongoose.Document {
-  title: string;
-  tags: string[];
-  sets: {
-    title?: string;
-    exercises: mongoose.Types.ObjectId[]; // reference IDs
-    order: number;
-  }[];
-  setOrder: number[];
-  createdAt?: Date;
-}
+const WorkoutExerciseSchema = new Schema({
+  exercise: { type: Schema.Types.ObjectId, ref: 'Exercise', required: true },
+  order: { type: Number, required: true },
+  duration: { type: Number, required: true },
+  instructions: { type: String },
+});
 
 const SetSchema = new Schema({
   title: { type: String },
-  exercises: [{ type: Schema.Types.ObjectId, ref: 'Exercise', required: true }],
   order: { type: Number, required: true },
+  exercises: { type: [WorkoutExerciseSchema], required: true },
 });
 
-const WorkoutSchema = new Schema<IWorkout>({
+const WorkoutSchema = new Schema({
   title: { type: String, required: true },
   tags: [String],
   sets: [SetSchema],
@@ -27,5 +22,4 @@ const WorkoutSchema = new Schema<IWorkout>({
   createdAt: { type: Date, default: Date.now },
 });
 
-const Workout = mongoose.model<IWorkout>('Workout', WorkoutSchema);
-export default Workout;
+export default mongoose.model('Workout', WorkoutSchema);

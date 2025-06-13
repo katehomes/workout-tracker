@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 // GET /workouts
 export const getAllWorkouts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const workouts = await Workout.find().populate('sets.exercises');
+    const workouts = await Workout.find().populate('sets.exercises.exercise');
     res.json(workouts);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -21,7 +21,7 @@ export const getWorkoutById = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const workout = await Workout.findById(id).populate('sets.exercises');
+    const workout = await Workout.findById(id).populate('sets.exercises.exercise');
     if (!workout) {
       res.status(404).json({ error: 'Not found' });
       return;

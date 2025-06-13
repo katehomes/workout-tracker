@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import type { WorkoutSet, Exercise } from '../../types/types';
+import type { WorkoutSet, WorkoutExercise } from '../../types/types';
 import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
 import { formatTime } from '../player/TimerDisplay';
+
 interface WorkoutEntry {
   setId: number;
   setOrderIndex: number;
-  exercises: { exercise: Exercise; completed: boolean }[];
+  exerciseEntries: { woExercise: WorkoutExercise; completed: boolean }[];
   completed: boolean;
 }
 
@@ -15,14 +16,14 @@ const generateWorkoutOrderEntries = (
 ): WorkoutEntry[] => {
   return setOrder.map((setId, orderIndex) => {
     const set = sets[setId];
-    const exercises = set.exercises.map((exercise) => ({
-      exercise,
+    const exerciseEntries = set.exercises.map((woExercise) => ({
+      woExercise,
       completed: false,
     }));
     return {
       setId,
       setOrderIndex: orderIndex,
-      exercises,
+      exerciseEntries,
       completed: false,
     };
   });
@@ -76,17 +77,26 @@ const WorkoutPreviewPanel: React.FC = () => {
                     <span>{`#${orderIndex + 1} - ${setTitle}`}</span>
                   </div>
                 </li>
-                {entry.exercises.map((ex, exIndex) => (
-                  <li
-                    key={`exercise-${orderIndex}-${exIndex}`}
-                    className="px-6 py-2 text-sm text-gray-700 bg-white hover:bg-gray-100"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span>{ex.exercise.title}</span>
-                      <span className="text-xs text-gray-500">{formatTime(ex.exercise.duration)}</span>
-                    </div>
-                  </li>
-                ))}
+                {entry.exerciseEntries.map((exEntry, exIndex) => {
+                  const exObj = exEntry.woExercise.exercise;
+                  const exerciseTitle = typeof exObj === 'string'
+                    ? `Exercise ID: ${exObj}`
+                    : exObj.title || 'Untitled Exercise';
+                  const exDuration = formatTime(exEntry.woExercise.duration) || '--:--';
+                  return(
+                    <li
+                      key={`exercise-${orderIndex}-${exIndex}`}
+                      className="px-6 py-2 text-sm text-gray-700 bg-white hover:bg-gray-100"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold capitalize">
+                          {exerciseTitle}
+                        </span>
+                        <span className="text-xs text-gray-500">{exDuration}</span>
+                      </div>
+                    </li>
+                  )
+                })}
               </React.Fragment>
             );
           })}

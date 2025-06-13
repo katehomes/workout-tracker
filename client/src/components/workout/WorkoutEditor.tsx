@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { getWorkout } from '../../api/workoutsApi';
 import { createWorkout, updateWorkout } from '../../api/workoutsApi';
 
-import type { WorkoutSet, Exercise, Workout } from '../../types/types';
+import type { WorkoutSet, Workout, WorkoutExercise } from '../../types/types';
 
 import { MdOutlineDeleteForever } from "react-icons/md";
 
@@ -66,7 +66,7 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
     } = useWorkoutDraft();
 
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
-    const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
+    const [activeExercise, setActiveExercise] = useState<WorkoutExercise | null>(null);
     const [editingMap, setEditingMap] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
@@ -93,11 +93,11 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
       setSets(newSets);
     };
 
-    const handleExerciseChange = <K extends keyof Exercise>(
+    const handleExerciseChange = <K extends keyof WorkoutExercise>(
       setIndex: number,
       exIndex: number,
       field: K,
-      value: Exercise[K]
+      value: WorkoutExercise[K]
     ) => {
       const newSets = [...draft.sets!];
       newSets[setIndex].exercises[exIndex][field] = value;
@@ -114,7 +114,7 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
     const addExercise = (setIndex: number) => {
       const newSets = [...draft.sets!];
       newSets[setIndex].exercises.push({
-        title: '',
+        exercise: '',
         duration: 0,
         order: newSets[setIndex].exercises.length,
       });
@@ -298,8 +298,13 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
                         
 
                           {!isEditing ? (
-                            <>
-                              <div className="font-semibold">{ex.title || 'Untitled Exercise'}</div>
+                            <>  
+                              <div className="font-semibold">
+                                {typeof ex.exercise === 'string'
+                                  ? `Exercise ID: ${ex.exercise}`
+                                  : ex.exercise.title || 'Untitled Exercise'}
+                              </div>
+
                               <div className="flex justify-between items-center gap-2 text-xs text-gray-500">
                                 <span>{ex.duration}s</span>
                                 {ex.instructions && (
@@ -311,17 +316,10 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
                             </>
                           ) : (
                             <>
-                              <div>
-                                <label className="w-32 font-semibold text-sm">Title: </label>
-                                <input
-                                  type="text"
-                                  className="input input-bordered flex-1"
-                                  value={ex.title}
-                                  onChange={(e) =>
-                                    handleExerciseChange(setIndex, exIndex, 'title', e.target.value)
-                                  }
-                                  placeholder="e.g., Jumping Jacks"
-                                />
+                              <div className="font-semibold">
+                                {typeof ex.exercise === 'string'
+                                  ? `Exercise ID: ${ex.exercise}`
+                                  : ex.exercise.title || 'Untitled Exercise'}
                               </div>
                               <div>
                                 <label className="w-32 font-semibold text-sm">Duration (s): </label>
@@ -357,7 +355,11 @@ import { useWorkoutDraft } from '../../contexts/WorkoutDraftContext';
                 <DragOverlay>
                   {activeExercise ? (
                     <div className="bg-white p-3 rounded shadow w-[280px] opacity-80">
-                      <div className="font-semibold">{activeExercise.title || 'Untitled Exercise'}</div>
+                      <div className="font-semibold">
+                                {typeof activeExercise.exercise === 'string'
+                                  ? `Exercise ID: ${activeExercise.exercise}`
+                                  : activeExercise.exercise.title || 'Untitled Exercise'}
+                              </div>
                       <div className="text-xs text-gray-500">{activeExercise.duration}s</div>
                     </div>
                   ) : null}

@@ -1,15 +1,16 @@
-export interface Exercise {
-  title: string;
-  duration: number;
+import type { Exercise } from "../api/exerciseApi";
+
+export interface WorkoutExercise {
+  exercise: string | Exercise;
   order: number;
+  duration: number;
   instructions?: string;
-  image?: string;
 }
 
 export interface WorkoutSet {
   title?: string;
   order: number;
-  exercises: Exercise[];
+  exercises: WorkoutExercise[];
 }
 
 export interface Workout {
@@ -19,12 +20,4 @@ export interface Workout {
   sets: WorkoutSet[];
   setOrder: number[];
   createdAt?: string;
-  updatedAt?: string;
 }
-
-type Media = {
-  url: string;
-  type: 'image' | 'gif' | 'video';
-  caption?: string;
-}
-
