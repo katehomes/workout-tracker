@@ -55,7 +55,8 @@ useEffect(() => {
                 {item.type === 'gif' || item.type === 'image' ? (
                   <img src={item.url} alt={item.caption} className="max-w-xs rounded shadow" />
                 ) : item.type === 'video' ? (
-                  <video src={item.url} controls className="max-w-xs rounded shadow" />
+                  <video src={item.url} autoPlay loop muted 
+                  className="max-w-xs rounded shadow" />
                 ) : null}
                 <p className="text-sm text-gray-500">{item.caption}</p>
               </div>

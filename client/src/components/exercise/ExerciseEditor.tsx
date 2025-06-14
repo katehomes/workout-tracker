@@ -29,9 +29,10 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
   const [diagrams, setDiagrams] = useState<string[]>([]);
 
   useEffect(() => {
-    console.log("demos", demos);
-    console.log("heros", heros);
-    console.log("diagrams", diagrams);
+    // console.log("media", media);
+    // console.log("demos", demos);
+    // console.log("heros", heros);
+    // console.log("diagrams", diagrams);
     setMediaMetadata({
       demos: demos, diagrams: diagrams, heros: heros
     });
@@ -103,6 +104,28 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
     const updated = [...media];
     updated[i] = { ...updated[i], [field]: value };
     setMedia(updated);
+  };
+
+  const filterRemovedMediaMetatdata = (arrToUpdate: string[], indexToRemove: number) => {
+    return arrToUpdate.filter(stringIdx => stringIdx !== indexToRemove.toString())
+      .map(demoIdx => {
+        const stringIdxNum: number = Number(demoIdx);
+
+        if(stringIdxNum < indexToRemove) return demoIdx;
+
+        return (stringIdxNum - 1).toString();
+      })
+  }
+
+  const removeMedia = (indexToRemove: number) => {
+
+    setDemos(filterRemovedMediaMetatdata(demos, indexToRemove));
+    setDiagrams(filterRemovedMediaMetatdata(diagrams, indexToRemove));
+    setHeros(filterRemovedMediaMetatdata(heros, indexToRemove));
+    
+    const newMedia = media;
+    newMedia.splice(indexToRemove, 1);
+    setMedia(newMedia);
   };
 
 
@@ -200,8 +223,8 @@ const CreateExercisePanel: React.FC<Props> = ({ closePanel, setDraft, id }) => {
         <button onClick={addStep} className="text-sm text-blue-600">+ Add Step</button>
       </div>
 
-      <MediaEditor media={media} addMedia={addMedia} updateMedia={updateMedia} exerciseTitle={title}
-        demos={demos} diagrams={diagrams} heros={heros}   
+      <MediaEditor media={media} addMedia={addMedia} updateMedia={updateMedia} removeMedia={removeMedia}
+        exerciseTitle={title} demos={demos} diagrams={diagrams} heros={heros}   
         toggleDemo={toggleDemo} toggleDiagram={toggleDiagram} toggleHero={toggleHero}
       />
 

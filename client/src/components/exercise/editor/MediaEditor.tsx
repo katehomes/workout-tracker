@@ -6,7 +6,8 @@ interface Props {
   exerciseTitle: string;
   media: Media[];
   addMedia: (template?: string) => void;
-  updateMedia: <K extends keyof Media>(i: number, field: K, value: Media[K]) => void
+  updateMedia: <K extends keyof Media>(i: number, field: K, value: Media[K]) => void;
+  removeMedia: (indexToRemove: number) => void;
   demos: string[];
   diagrams: string[];
   heros: string[];
@@ -28,7 +29,7 @@ export const getMediaTypeByTemplate = (template: string) => {
     }
 }
 
-const MediaEditor: React.FC<Props> = ({ 
+const MediaEditor: React.FC<Props> = ({ removeMedia,
     exerciseTitle, media, addMedia, updateMedia, demos, diagrams, heros, toggleDemo, toggleDiagram, toggleHero}) => {
     const[needs, setNeeds]= useState<string[]>([]);
 
@@ -54,7 +55,7 @@ const MediaEditor: React.FC<Props> = ({
         {media.map((m, i) => (
           <MediaEditorItem 
             media={m} index={i} updateMedia={updateMedia} demos={demos} diagrams={diagrams} heros={heros}
-            toggleDemo={toggleDemo} toggleDiagram={toggleDiagram} toggleHero={toggleHero}/>
+            toggleDemo={toggleDemo} toggleDiagram={toggleDiagram} toggleHero={toggleHero} removeMedia={removeMedia}/>
         ))}
         </div>
         <button onClick={(e) => addMedia()} className="text-sm text-blue-600 mr-2">+ Blank Media</button>
